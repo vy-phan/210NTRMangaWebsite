@@ -1,117 +1,135 @@
-import mongoose from 'mongoose'
+import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Manga from '../models/MangaModels';
+import asyncHandler from 'express-async-handler';
 
-
-export const getMangaById = async (req, res) => {
+/**
+ * @desc    Get a single manga by its ID
+ * @route   GET /api/manga/:id
+ * @access  Public
+ */
+export const getMangaById = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({ success: false, message: "No such manga with this ID" });
+        res.status(404); // Not Found là hợp lý hơn 400
+        throw new Error("Invalid manga ID format");
     }
 
-    try {
-        const manga = await Manga.findById(id).populate('genres');
+    const manga = await Manga.findById(id).populate('genres');
 
-        if (!manga) {
-            return res.status(404).json({ success: false, message: "Manga not found" });
-        }
-
-        res.status(200).json({ success: true, data: manga });
-    } catch (error) {
-        console.error("Error in GET Manga by ID:", error.message);
-        res.status(500).json({ success: false, message: "Server Error" });
+    if (!manga) {
+        res.status(404);
+        throw new Error("Manga not found");
     }
-};
 
-export const getMangaBySlug = async (req, res) => {
+    res.status(200).json({ success: true, data: manga });
+});
+
+/**
+ * @desc    Get a single manga by its slug
+ * @route   GET /api/manga/slug/:slug
+ * @access  Public
+ */
+export const getMangaBySlug = asyncHandler(async (req: Request, res: Response) => {
     const { slug } = req.params;
-
-    if (!slug) {
-        res.status(400).json({ success: false, message: "Slug is required" });
-        return;
-    }
 
     const manga = await Manga.findOne({ slug }).populate('genres');
 
     if (!manga) {
-        // Trả về 404 nếu không tìm thấy manga trong DB
-        res.status(404).json({ success: false, message: "Manga not found with that slug" });
-        return;
+        res.status(404);
+        throw new Error("Manga not found with that slug");
     }
 
     res.status(200).json({ success: true, data: manga });
-};
+});
 
-
-export const getManga = (async (req, res) => {
-    const mangas = await Manga.find().populate('genres').sort({ createdAt: -1 });
+/**
+ * @desc    Get all mangas
+ * @route   GET /api/manga
+ * @access  Public
+ */
+export const getManga = asyncHandler(async (req: Request, res: Response) => {
+    const mangas = await Manga.find().populate('genres').sort({ updatedAt: -1 });
     res.status(200).json({ success: true, data: mangas });
 });
 
-export const getLengthManga = async (req, res) => {
-    try {
-        const mangaCount = await Manga.countDocuments();
-        res.status(200).json({ success: true, data: mangaCount });
-    } catch (error) {
-        console.error("Error getting manga count:", error);
-        res.status(500).json({ success: false, message: "Server Error" });
+/**
+ * @desc    Get the total count of mangas
+ * @route   GET /api/manga/count
+ * @access  Public
+ */
+export const getLengthManga = asyncHandler(async (req: Request, res: Response) => {
+    const mangaCount = await Manga.countDocuments();
+    res.status(200).json({ success: true, data: mangaCount });
+});
+
+/**
+ * @desc    Create a new manga
+ * @route   POST /api/manga
+ * @access  Private/Admin
+ */
+export const postManga = asyncHandler(async (req: Request, res: Response) => {
+    const { title, slug, genres, poster } = req.body;
+
+    // Chỉ kiểm tra các trường thực sự bắt buộc
+    if (!title || !slug || !genres || !poster) {
+        res.status(400); // Bad Request
+        throw new Error("Please provide title, slug, genres, and poster");
     }
-}
 
-export const postManga = async (req, res) => {
-    const manga = req.body
+    const newManga = new Manga(req.body);
+    const createdManga = await newManga.save();
 
-    if (!manga.title || !manga.slug || !manga.status || !manga.genres || !manga.poster) {
-        return res.status(400).json({ success: false, message: "Please provid all fields" })
-    }
+    res.status(201).json({ success: true, data: createdManga });
+});
 
-    const newManga = new Manga(manga)
-
-    try {
-        await newManga.save()
-        res.status(201).json({ success: true, data: newManga })
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).json({ success: false, message: "Server Error" })
-    }
-}
-
-export const deleteManga = async (req, res) => {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({ success: false, message: "No such manga" });
-    }
-    try {
-        await Manga.findByIdAndDelete(id);
-        res.status(200).json({ success: true, message: "Manga deleted" });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: "Server Error" });
-    }
-}
-
-export const updateManga = async (req, res) => {
+/**
+ * @desc    Delete a manga by its ID
+ * @route   DELETE /api/manga/:id
+ * @access  Private/Admin
+ */
+export const deleteManga = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({ success: false, message: "No such manga" });
+        res.status(404);
+        throw new Error("Invalid manga ID format");
     }
 
-    try {
-        const updatedManga = await Manga.findByIdAndUpdate(
-            id,
-            { ...req.body },
-            { new: true }
-        ).populate('genres');
+    const manga = await Manga.findByIdAndDelete(id);
 
-        if (!updatedManga) {
-            return res.status(404).json({ success: false, message: "Manga not found after update attempt" });
-        }
-
-        res.status(200).json({ success: true, data: updatedManga });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ success: false, message: "Server Error" });
+    if (!manga) {
+        res.status(404);
+        throw new Error("Manga not found, cannot delete");
     }
-};
+
+    res.status(200).json({ success: true, message: "Manga deleted successfully" });
+});
+
+/**
+ * @desc    Update a manga by its ID
+ * @route   PUT /api/manga/:id
+ * @access  Private/Admin
+ */
+export const updateManga = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(404);
+        throw new Error("Invalid manga ID format");
+    }
+
+    const updatedManga = await Manga.findByIdAndUpdate(
+        id,
+        req.body,
+        { new: true, runValidators: true } // `new: true` để trả về doc đã cập nhật
+    ).populate('genres');
+
+    if (!updatedManga) {
+        res.status(404);
+        throw new Error("Manga not found, cannot update");
+    }
+
+    res.status(200).json({ success: true, data: updatedManga });
+});

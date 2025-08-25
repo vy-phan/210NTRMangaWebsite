@@ -1,14 +1,25 @@
 {
-	"compilerOptions": {
-		"moduleDetection": "force",
-		"module": "CommonJS",
-		"resolveJsonModule": true,
-		"allowJs": true,
-		"esModuleInterop": true,
-		"isolatedModules": true
-	},
-	"exclude": [
-		"node_modules",
-		"frontend"
-	]
+  "compilerOptions": {
+    /* ----- Project Options ----- */
+    "target": "ES2022",                  // Dùng phiên bản ES hiện đại
+    "module": "NodeNext",               // Module system tốt nhất cho Node.js hiện đại
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,            // Cho phép tương tác với các module CommonJS
+    "forceConsistentCasingInFileNames": true, // Bắt buộc tên file nhất quán
+    "strict": true,                     // Bật các chế độ kiểm tra type nghiêm ngặt
+    "skipLibCheck": true,               // Bỏ qua kiểm tra type của thư viện
+
+    /* ----- Emit Options (QUAN TRỌNG NHẤT) ----- */
+    "outDir": "./dist",                 // Thư mục chứa code JavaScript sau khi build
+    "rootDir": "./backend",             // Thư mục gốc chứa code TypeScript
+    "sourceMap": true,                  // Tạo source maps để debug dễ hơn trên production
+
+    /* ----- Type Checking ----- */
+    "allowJs": true,
+    "resolveJsonModule": true
+  },
+  // Chỉ bao gồm thư mục backend để biên dịch
+  "include": ["backend/**/*.ts"],
+  // Bỏ qua node_modules
+  "exclude": ["node_modules", "frontend"]
 }

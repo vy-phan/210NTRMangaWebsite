@@ -4,20 +4,31 @@ import User from '../models/UserModels';
 import { supabase } from '../config/supabase';
 
 export const syncUserProfile = asyncHandler(async (req: Request, res: Response) => {
-    // Middleware `protectRoute` đã chạy trước đó và đã xác thực token
-    const token = req.headers.authorization.split(' ')[1];
-    const { data: { user: supabaseUser } } = await supabase.auth.getUser(token);
+    // 1. Kiểm tra sự tồn tại của header `Authorization`
+    const authHeader = req.headers.authorization;
 
-    if (!supabaseUser) {
-        res.status(401).json({ success: false, message: "Invalid Supabase user" });
-        return;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401);
+        throw new Error("Authorization token is missing or malformed");
     }
 
-    const { id: supabaseId, email, user_metadata } = supabaseUser;
+    // 2. Chỉ tách token khi đã chắc chắn header tồn tại và đúng định dạng
+    const token = authHeader.split(' ')[1];
+
+    // 3. Xác thực token với Supabase
+    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
+
+    if (error || !supabaseUser) {
+        res.status(401);
+        throw new Error("Invalid Supabase user or token");
+    }
+
+    // 4. Logic còn lại không thay đổi
+    const { id: supabaseId, email, user_metadata, app_metadata } = supabaseUser;
 
     const displayName = user_metadata.full_name || user_metadata.user_name || 'Anonymous';
     const avatarUrl = user_metadata.avatar_url || '';
-    const provider = supabaseUser.app_metadata.provider;
+    const provider = app_metadata.provider;
 
     const user = await User.findOneAndUpdate(
         { supabaseId: supabaseId },
@@ -39,8 +50,10 @@ export const syncUserProfile = asyncHandler(async (req: Request, res: Response) 
             select: '-__v'
         }
     );
+
     res.status(200).json({ success: true, data: user });
 });
+
 
 
 export const getCurrentUserProfile = asyncHandler(async (req: Request, res: Response) => {
