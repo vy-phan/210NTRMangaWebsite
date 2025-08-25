@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"moduleDetection": "force",
+		"module": "CommonJS",
+		"resolveJsonModule": true,
+		"allowJs": true,
+		"esModuleInterop": true,
+		"isolatedModules": true
+	},
+	"exclude": [
+		"node_modules",
+		"frontend"
+	]
+}
