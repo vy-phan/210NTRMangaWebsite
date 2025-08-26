@@ -1,18 +1,19 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {  FiAlignJustify, FiTrash2 } from 'react-icons/fi';
+import {  FiColumns, FiTrash2 } from 'react-icons/fi'; // Đổi lại icon cho phù hợp
 
 interface SortableImageItemProps {
-  id: string; // dnd-kit cần một ID duy nhất, chúng ta sẽ dùng index
+  id: string; 
   url: string;
-  index: number;
+  pageNumber: number; // <<-- THÊM PROP NÀY
+  index: number; // Vẫn cần index để cập nhật đúng phần tử
   onUrlChange: (index: number, url: string) => void;
   onRemove: (index: number) => void;
   isRemoveDisabled: boolean;
 }
 
-const SortableImageItem: React.FC<SortableImageItemProps> = ({ id, url, index, onUrlChange, onRemove, isRemoveDisabled }) => {
+const SortableImageItem: React.FC<SortableImageItemProps> = ({ id, url, pageNumber, index, onUrlChange, onRemove, isRemoveDisabled }) => {
   const {
     attributes,
     listeners,
@@ -28,27 +29,33 @@ const SortableImageItem: React.FC<SortableImageItemProps> = ({ id, url, index, o
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-2 bg-base-100 p-2 rounded-lg">
-      {/* Handle để kéo thả */}
       <button type="button" {...listeners} {...attributes} className="btn btn-ghost btn-sm px-2 cursor-grab active:cursor-grabbing">
-        <FiAlignJustify />
+        <FiColumns />
       </button>
       
-      {/* Số thứ tự */}
-      <span className="font-mono p-2 bg-base-200 rounded-md">{index + 1}</span>
+      {/* === SỬA LẠI Ở ĐÂY === */}
+      {/* Hiển thị `pageNumber` gốc thay vì `index + 1` */}
+      <span className="font-mono p-2 bg-base-200 rounded-md">{pageNumber}</span> 
       
-      {/* Input URL */}
       <input
         type="url"
         placeholder="https://example.com/image.jpg"
         value={url}
+        // Truyền `index` vào hàm onUrlChange để nó biết vị trí trong mảng
         onChange={(e) => onUrlChange(index, e.target.value)}
         required
         className="input input-bordered grow"
       />
       
+      {url && (
+        <div className="avatar">
+          <div className="w-12 rounded">
+            <img src={url} alt={`Preview ${pageNumber}`} referrerPolicy="no-referrer" />
+          </div>
+        </div>
+      )}
       
-      {/* Nút xóa */}
-      <button type="button" onClick={() => onRemove(index)} className="btn btn-ghost btn-circle btn-sm" disabled={isRemoveDisabled}>
+      <button type-="button" onClick={() => onRemove(index)} className="btn btn-ghost btn-circle btn-sm" disabled={isRemoveDisabled}>
         <FiTrash2 className="text-error" />
       </button>
     </div>

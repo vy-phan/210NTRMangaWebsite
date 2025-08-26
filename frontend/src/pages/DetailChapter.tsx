@@ -24,18 +24,21 @@ const DetailChapter = () => {
   const [totalChapters, setTotalChapters] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  const num = Number(chapterNumber);
+ const displayChapterNumber = Number(chapterNumber);
+  
+  // 'chapterIndex' sẽ là số chương MÁY SỬ DỤNG (bắt đầu từ 0)
+  const chapterIndex = displayChapterNumber - 1;
 
+  // --- Logic điều hướng được cập nhật ---
   const goToPreviousChapter = () => {
-    // Thêm điều kiện kiểm tra để không điều hướng khi đang loading hoặc không có slug
-    if (!isLoading && slug && num > 0) {
-      navigate(`/manga/${slug}/chapter/${num - 1}`);
+    if (!isLoading && slug && displayChapterNumber > 1) {
+      navigate(`/manga/${slug}/chapter/${displayChapterNumber - 1}`);
     }
   };
 
   const goToNextChapter = () => {
-    if (!isLoading && slug && num < totalChapters - 1) {
-      navigate(`/manga/${slug}/chapter/${num + 1}`);
+    if (!isLoading && slug && displayChapterNumber < totalChapters) {
+      navigate(`/manga/${slug}/chapter/${displayChapterNumber + 1}`);
     }
   };
 
@@ -52,7 +55,7 @@ const DetailChapter = () => {
       return;
     }
 
-    if (isNaN(num)) {
+    if (isNaN(displayChapterNumber)) {
       toast.error("Số chương không hợp lệ.");
       setIsLoading(false);
       return;
@@ -62,7 +65,7 @@ const DetailChapter = () => {
     const fetchChapter = async () => {
       try {
         setIsLoading(true);
-        const { chapter: data, totalChapters: total } = await getChapterByNumberAPI(slug, num);
+        const { chapter: data, totalChapters: total } = await getChapterByNumberAPI(slug, chapterIndex);
         // Sắp xếp lại ảnh theo pageNumber để đảm bảo thứ tự
         data.images.sort((a, b) => a.pageNumber - b.pageNumber);
         setChapter(data);
@@ -110,11 +113,13 @@ const DetailChapter = () => {
           {/* === DROPDOWN CHỌN CHƯƠNG === */}
           <select
             className="select select-bordered select-sm max-w-xs"
-            value={num}
+            value={displayChapterNumber} // Hiển thị số chương (từ 1)
             onChange={handleChapterSelect}
           >
+            {/* Tạo mảng từ 1 đến totalChapters */}
             {Array.from({ length: totalChapters }, (_, i) => i + 1).map(chapNum => (
               <option key={chapNum} value={chapNum}>
+                {/* Lấy title của chương nếu có, nếu không thì hiển thị "Chương X" */}
                 Chương {chapNum}
               </option>
             ))}
@@ -123,7 +128,7 @@ const DetailChapter = () => {
           {/* === SỬ DỤNG COMPONENT ĐIỀU HƯỚNG MỚI === */}
           <ChapterNavigation
             mangaSlug={slug!}
-            currentChapter={num}
+            currentChapterDisplay={displayChapterNumber} // Truyền số chương hiển thị
             totalChapters={totalChapters}
             isHeader={true}
           />
@@ -146,11 +151,11 @@ const DetailChapter = () => {
       <footer className="p-4">
         <div className="container mx-auto flex justify-center">
           {/* === TÁI SỬ DỤNG COMPONENT ĐIỀU HƯỚNG === */}
-          <ChapterNavigation
-            mangaSlug={slug!}
-            currentChapter={num}
-            totalChapters={totalChapters}
-          />
+         <ChapterNavigation
+                mangaSlug={slug!}
+                currentChapterDisplay={displayChapterNumber}
+                totalChapters={totalChapters}
+            />
         </div>
       </footer>
     </div>

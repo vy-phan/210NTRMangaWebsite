@@ -33,6 +33,10 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+
+    const [numImagesToAdd, setNumImagesToAdd] = useState(1);
+
     useEffect(() => {
         if (isOpen) {
             if (mode === 'edit' && initialData) {
@@ -71,8 +75,22 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
     };
 
     const addImageField = () => {
-        const newPageNumber = formData.images.length > 0 ? Math.max(...formData.images.map(img => img.pageNumber)) + 1 : 1;
-        setFormData(prev => ({ ...prev, images: [...prev.images, { url: '', pageNumber: newPageNumber }] }));
+        // Lấy số trang cuối cùng hiện có
+        const lastPageNumber = formData.images.length > 0
+            ? Math.max(...formData.images.map(img => img.pageNumber))
+            : 0;
+
+        // Tạo ra một mảng các ô nhập mới
+        const newFields = Array.from({ length: numImagesToAdd }, (_, i) => ({
+            url: '',
+            pageNumber: lastPageNumber + i + 1,
+        }));
+
+        // Thêm các ô nhập mới vào cuối danh sách
+        setFormData(prev => ({ ...prev, images: [...prev.images, ...newFields] }));
+
+        // Reset lại số lượng về 1 cho lần thêm tiếp theo
+        setNumImagesToAdd(1);
     };
 
     const removeImageField = (index: number) => {
@@ -91,8 +109,11 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
         const { active, over } = event;
         if (active.id !== over.id) {
             setFormData((prev) => {
-                const oldIndex = prev.images.findIndex((_, index) => index.toString() === active.id);
-                const newIndex = prev.images.findIndex((_, index) => index.toString() === over.id);
+                const oldIndex = prev.images.findIndex((img) => img.pageNumber.toString() === active.id);
+                const newIndex = prev.images.findIndex((img) => img.pageNumber.toString() === over.id);
+                
+                if (oldIndex === -1 || newIndex === -1) return prev; 
+
                 return { ...prev, images: arrayMove(prev.images, oldIndex, newIndex) };
             });
         }
@@ -101,7 +122,13 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-        const finalImages = formData.images.map((img, index) => ({ url: img.url, pageNumber: index + 1 }));
+        // Gán lại `pageNumber` theo đúng thứ tự hiện tại của mảng TRƯỚC KHI LƯU
+        const finalImages = formData.images.map((img, index) => ({ 
+            url: img.url, 
+            pageNumber: index + 1 
+        }));
+        
+        // Gửi đi dữ liệu đã được cập nhật
         onSave({ ...formData, images: finalImages });
         setIsSaving(false);
     };
@@ -149,17 +176,19 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                             collisionDetection={closestCenter}
                             onDragEnd={handleDragEnd}
                         >
-                            <SortableContext
-                                items={formData.images.map((_, index) => index.toString())}
+                           <SortableContext
+                                items={formData.images.map(image => image.pageNumber.toString())}
                                 strategy={verticalListSortingStrategy}
                             >
                                 <div className="space-y-2">
                                     {formData.images.map((image, index) => (
                                         <SortableImageItem
-                                            key={index}
-                                            id={index.toString()}
+                                            // Dùng `pageNumber` làm key và id vì nó là duy nhất
+                                            key={image.pageNumber}
+                                            id={image.pageNumber.toString()}
                                             url={image.url}
-                                            index={index}
+                                            pageNumber={image.pageNumber} // Truyền pageNumber gốc
+                                            index={index} // Vẫn truyền index để update đúng vị trí trong mảng
                                             onUrlChange={handleImageChange}
                                             onRemove={removeImageField}
                                             isRemoveDisabled={formData.images.length <= 1}
@@ -168,9 +197,23 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                                 </div>
                             </SortableContext>
                         </DndContext>
-                        <button type="button" onClick={addImageField} className="btn btn-outline btn-sm w-full mt-3">
-                            <FiPlus /> Thêm Ảnh
-                        </button>
+                        <div className="join w-full mt-3">
+                            <input
+                                type="number"
+                                className="input input-bordered join-item w-24"
+                                min="1"
+                                max="100" // Giới hạn để tránh treo máy
+                                value={numImagesToAdd}
+                                onChange={(e) => setNumImagesToAdd(Math.max(1, Number(e.target.value)))}
+                            />
+                            <button
+                                type="button"
+                                onClick={addImageField}
+                                className="btn btn-outline join-item flex-grow"
+                            >
+                                <FiPlus /> Thêm {numImagesToAdd} Ảnh
+                            </button>
+                        </div>
                     </div>
 
                     {/* Sử dụng component collapse của DaisyUI */}

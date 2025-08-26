@@ -3,20 +3,20 @@ import { FiArrowLeft, FiArrowRight } from 'react-icons/fi';
 
 interface ChapterNavigationProps {
   mangaSlug: string;
-  currentChapter: number;
+  currentChapterDisplay: number; // Số chương hiển thị (bắt đầu từ 1)
   totalChapters: number;
-  isHeader?: boolean; // prop để phân biệt style cho header
+  isHeader?: boolean;
 }
 
-const ChapterNavigation = ({ mangaSlug, currentChapter, totalChapters, isHeader = false }: ChapterNavigationProps) => {
-  const hasPrevious = currentChapter > 0; // Giả sử chương 0 là chương đầu tiên
-  const hasNext = currentChapter < totalChapters - 1; // Logic cần kiểm tra tổng số chương
+const ChapterNavigation = ({ mangaSlug, currentChapterDisplay, totalChapters, isHeader = false }: ChapterNavigationProps) => {
+  const hasPrevious = currentChapterDisplay > 1;
+  const hasNext = currentChapterDisplay < totalChapters;
 
   return (
     <div className="join">
       {/* Nút Chương Trước */}
       {hasPrevious ? (
-        <Link to={`/manga/${mangaSlug}/chapter/${currentChapter - 1}`} className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`}>
+        <Link to={`/manga/${mangaSlug}/chapter/${currentChapterDisplay - 1}`} className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`}>
           <FiArrowLeft /> {isHeader && <span className="hidden md:inline">Trước</span>}
         </Link>
       ) : (
@@ -27,7 +27,7 @@ const ChapterNavigation = ({ mangaSlug, currentChapter, totalChapters, isHeader 
 
       {/* Nút Chương Sau */}
       {hasNext ? (
-        <Link to={`/manga/${mangaSlug}/chapter/${currentChapter + 1}`} className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`}>
+        <Link to={`/manga/${mangaSlug}/chapter/${currentChapterDisplay + 1}`} className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`}>
           {isHeader && <span className="hidden md:inline">Sau</span>} <FiArrowRight />
         </Link>
       ) : (

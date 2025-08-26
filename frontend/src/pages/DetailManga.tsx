@@ -144,27 +144,33 @@ const DetailManga = () => {
               {!isLoadingChapters && chapters.length > 0 && (
                 <div className="flex flex-wrap gap-4 mt-2">
                   {(() => {
-                    // Tìm chương đầu tiên (số nhỏ nhất) và chương mới nhất (số lớn nhất)
-                    const firstChapter = chapters.reduce((prev, current) => (prev.number < current.number ? prev : current));
-                    const latestChapter = chapters.reduce((prev, current) => (prev.number > current.number ? prev : current));
+                    // Do mảng `chapters` đã được sắp xếp, việc tìm chương đầu/cuối trở nên cực kỳ đơn giản
+                    const firstChapter = chapters[0];
+                    const latestChapter = chapters[chapters.length - 1];
+
+                    // Lấy số chương để hiển thị (từ title) và số để điều hướng (từ number)
+                    // Chúng ta giả định title là một chuỗi số, ví dụ "1", "2.5"
+                    const firstChapterDisplayNumber = firstChapter.title;
+                    const latestChapterDisplayNumber = latestChapter.title;
 
                     return (
                       <>
                         {/* Nút Đọc từ đầu */}
                         <Link
-                          to={`/manga/${slug}/chapter/${firstChapter.number}`}
+                          // Điều hướng theo `number` (index) đã được chuyển thành title (display) ở trang Chapter
+                          to={`/manga/${slug}/chapter/${latestChapterDisplayNumber}`}
                           className="btn btn-primary btn-md"
                         >
-                          <FiBookOpen /> Đọc từ đầu (Ch. {firstChapter.number})
+                          <FiBookOpen /> Đọc từ đầu (Ch. {latestChapterDisplayNumber})
                         </Link>
 
                         {/* Nút Đọc chương mới nhất */}
                         <Link
-                          to={`/manga/${slug}/chapter/${latestChapter.number}`}
+                          to={`/manga/${slug}/chapter/${firstChapterDisplayNumber}`}
                           className="btn btn-ghost btn-md border border-base-content/20"
                         >
                           <FiBookmark />
-                          Chương mới nhất (Ch. {latestChapter.number})
+                          Chương mới nhất (Ch. {firstChapterDisplayNumber})
                         </Link>
                       </>
                     );
@@ -211,7 +217,7 @@ const DetailManga = () => {
                   {chapters.map(chapter => (
                     <li key={chapter._id}>
                       <Link
-                        to={`/manga/${slug}/chapter/${chapter.number}`}
+                        to={`/manga/${slug}/chapter/${chapter.number + 1}`}
                         className="flex justify-between items-center p-3 rounded-lg hover:bg-base-200"
                       >
                         <span className="font-semibold">Chương {chapter.title}</span>
