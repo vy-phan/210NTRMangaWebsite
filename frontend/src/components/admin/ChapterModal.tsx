@@ -13,8 +13,9 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useState, useEffect } from 'react';
-import { FiPlus, FiSave, FiX } from 'react-icons/fi';
+import { FiPlus, FiSave, FiUploadCloud, FiX } from 'react-icons/fi';
 import SortableImageItem from '../../pages/admin/SortableImageItem';
+import toast from 'react-hot-toast';
 
 interface ChapterModalProps {
     isOpen: boolean;
@@ -34,8 +35,9 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
     const [isSaving, setIsSaving] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-
     const [numImagesToAdd, setNumImagesToAdd] = useState(1);
+
+    const [bulkImageText, setBulkImageText] = useState('');
 
     useEffect(() => {
         if (isOpen) {
@@ -111,8 +113,8 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
             setFormData((prev) => {
                 const oldIndex = prev.images.findIndex((img) => img.pageNumber.toString() === active.id);
                 const newIndex = prev.images.findIndex((img) => img.pageNumber.toString() === over.id);
-                
-                if (oldIndex === -1 || newIndex === -1) return prev; 
+
+                if (oldIndex === -1 || newIndex === -1) return prev;
 
                 return { ...prev, images: arrayMove(prev.images, oldIndex, newIndex) };
             });
@@ -123,14 +125,80 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
         e.preventDefault();
         setIsSaving(true);
         // Gán lại `pageNumber` theo đúng thứ tự hiện tại của mảng TRƯỚC KHI LƯU
-        const finalImages = formData.images.map((img, index) => ({ 
-            url: img.url, 
-            pageNumber: index + 1 
+        const finalImages = formData.images.map((img, index) => ({
+            url: img.url,
+            pageNumber: index + 1
         }));
-        
+
         // Gửi đi dữ liệu đã được cập nhật
         onSave({ ...formData, images: finalImages });
         setIsSaving(false);
+    };
+
+    const handleBulkImport = () => {
+        const text = bulkImageText.trim();
+        if (!text) {
+            toast.error("Vui lòng nhập danh sách URL.");
+            return;
+        }
+
+        let newImages: { url: string; pageNumber: number }[] = [];
+
+        try {
+            // Ưu tiên kiểm tra định dạng JSON trước
+            if (text.startsWith('[')) {
+                const urls = JSON.parse(text);
+                if (!Array.isArray(urls) || !urls.every(item => typeof item === 'string')) {
+                    throw new Error("JSON phải là một mảng các chuỗi URL.");
+                }
+                newImages = urls.map((url, index) => ({
+                    url,
+                    pageNumber: index + 1,
+                }));
+            } else {
+                // Xử lý định dạng text theo dòng
+                const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+
+                // Kiểm tra xem có phải định dạng "index:url" không
+                // Dựa vào dòng đầu tiên: nếu có chứa dấu hai chấm ':'
+                if (lines.length > 0 && /^\d+:.+$/.test(lines[0])) {
+                    // Đây là định dạng "index:url"
+                    newImages = lines.map(line => {
+                        const parts = line.split(':');
+                        const pageIndex = parseInt(parts[0], 10); // Lấy số trang
+                        const url = parts.slice(1).join(':'); // Nối lại phần còn lại của URL
+
+                        // pageNumber sẽ là index + 1
+                        return { url, pageNumber: pageIndex + 1 };
+                    }).filter(img => !isNaN(img.pageNumber) && img.url.startsWith('http'));
+
+                    // Sắp xếp lại mảng theo pageNumber để đảm bảo thứ tự
+                    newImages.sort((a, b) => a.pageNumber - b.pageNumber);
+
+                } else {
+                    // Đây là định dạng mỗi URL một dòng
+                    newImages = lines
+                        .filter(line => line.startsWith('http'))
+                        .map((url, index) => ({
+                            url,
+                            pageNumber: index + 1,
+                        }));
+                }
+            }
+
+            if (newImages.length === 0) {
+                toast.error("Không tìm thấy URL hợp lệ nào trong dữ liệu đã nhập.");
+                return;
+            }
+
+            setFormData(prev => ({ ...prev, images: newImages }));
+            toast.success(`Đã import thành công ${newImages.length} ảnh!`);
+            setBulkImageText('');
+
+        } catch (error) {
+            toast.error("Định dạng dữ liệu không hợp lệ. Vui lòng kiểm tra lại.");
+            console.error(error);
+        }
     };
 
     if (!isOpen) return null;
@@ -176,7 +244,7 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                             collisionDetection={closestCenter}
                             onDragEnd={handleDragEnd}
                         >
-                           <SortableContext
+                            <SortableContext
                                 items={formData.images.map(image => image.pageNumber.toString())}
                                 strategy={verticalListSortingStrategy}
                             >
@@ -212,6 +280,37 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                                 className="btn btn-outline join-item flex-grow"
                             >
                                 <FiPlus /> Thêm {numImagesToAdd} Ảnh
+                            </button>
+                        </div>
+
+                        <div className="divider mt-6">Hoặc Nhập Hàng Loạt</div>
+                        <div className="form-control">
+                            <textarea
+                                className="textarea textarea-bordered h-32 font-mono text-xs"
+                                placeholder={
+                                    `Dán danh sách ảnh vào đây...
+
+Định dạng được hỗ trợ:
+1. Mỗi URL một dòng:
+   https://.../anh1.jpg
+   https://.../anh2.jpg
+
+2. Index và URL:
+   0:https://.../anh0.jpg
+   1:https://.../anh1.jpg
+
+3. Mảng JSON:
+   ["https://.../anh1.jpg", "https://.../anh2.jpg"]`
+                                }
+                                value={bulkImageText}
+                                onChange={(e) => setBulkImageText(e.target.value)}
+                            ></textarea>
+                            <button
+                                type="button"
+                                onClick={handleBulkImport}
+                                className="btn btn-secondary btn-sm mt-2"
+                            >
+                                <FiUploadCloud /> Import và Thay thế danh sách trên
                             </button>
                         </div>
                     </div>

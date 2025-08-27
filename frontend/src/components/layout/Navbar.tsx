@@ -44,10 +44,7 @@ const Navbar = () => {
                     </ul>
                 </div>
                 <Link to="/" className="btn btn-ghost text-xl font-bold p-2">
-                    <img src="./logo.png" alt="Logo" className='w-14' onError={(e) => {
-                        (e.target as HTMLImageElement).onerror = null;
-                        (e.target as HTMLImageElement).src = "https://raw.githubusercontent.com/vy-phan/210NTRMangaWebsite/refs/heads/master/frontend/public/logo.png?token=GHSAT0AAAAAACWMDGUSYBGBM27MZQZE3Q6E2FNCYRA";
-                    }} />
+                    {/* <img src="./logo.png" alt="Logo" className='w-14'/> */}
                     210 NTR Manga
                     </Link>
             </div>
