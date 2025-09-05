@@ -266,13 +266,19 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
                                     ) : filteredGenres.length > 0 ? (
                                         <div className="grid grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2">
                                             {filteredGenres.map(genre => (
-                                                <a
+                                                <div
                                                     key={genre._id}
-                                                    onClick={(e) => { e.preventDefault(); handleGenreToggle(genre._id); }}
-                                                    className={`btn btn-sm rounded-full cursor-pointer ${formData.genres.includes(genre._id) ? 'btn-info' : 'btn-outline btn-primary'}`}
+                                                    // Sử dụng class tùy chỉnh của chúng ta
+                                                    className="tooltip tooltip-bottom description-tooltip z-999 "
+                                                    data-tip={genre.description || 'Không có mô tả.'}
                                                 >
-                                                    <span className="truncate">{genre.name}</span>
-                                                </a>
+                                                    <a
+                                                        onClick={(e) => { e.preventDefault(); handleGenreToggle(genre._id); }}
+                                                        className={`btn btn-sm rounded-full w-full cursor-pointer ${formData.genres.includes(genre._id) ? 'btn-info' : 'btn-outline btn-primary'}`}
+                                                    >
+                                                        <span className="truncate">{genre.name}</span>
+                                                    </a>
+                                                </div>
                                             ))}
                                         </div>
                                     ) : (

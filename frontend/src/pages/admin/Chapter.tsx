@@ -3,16 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChaptersByMangaIdAPI, createChapterAPI, updateChapterAPI, deleteChapterAPI, type ChapterInput } from '../../api/chapterApi';
 import ChapterModal from '../../components/admin/ChapterModal';
-import { FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiImage } from 'react-icons/fi';
+import ImageLibraryModal from '../../components/admin/ImageLibraryModal';
 
 const ChapterAdmin = () => {
-    const { mangaId } = useParams<{ mangaId: string }>();
+   const { mangaId, mangaName } = useParams<{ mangaId: string, mangaName: string }>(); 
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+     const [isImageLibraryOpen, setIsImageLibraryOpen] = useState(false);
 
     useEffect(() => {
         if (!mangaId) return;
@@ -89,9 +91,16 @@ const ChapterAdmin = () => {
                     <h1 className="text-3xl font-bold">Quản lý Chương</h1>
                     <Link to={`/admin/mangas`} className="text-sm link link-hover">← Quay lại danh sách truyện</Link>
                 </div>
-                <button className="btn btn-primary" onClick={handleOpenAddModal}>
-                    <FiPlus /> Thêm Chương Mới
-                </button>
+                <div className="flex items-center gap-2">
+                    {/* Nút quản lý ảnh */}
+                    <button className="btn btn-accent" onClick={() => setIsImageLibraryOpen(true)}>
+                        <FiImage /> Thư Viện Ảnh
+                    </button>
+                    {/* Nút thêm chương mới */}
+                    <button className="btn btn-primary" onClick={handleOpenAddModal}>
+                        <FiPlus /> Thêm Chương Mới
+                    </button>
+                </div>
             </header>
 
             {chapters.length === 0 ? (
@@ -156,6 +165,14 @@ const ChapterAdmin = () => {
                 mode={modalMode}
                 existingChapters={chapters}
             />
+
+            {mangaName && (
+                <ImageLibraryModal
+                    isOpen={isImageLibraryOpen}
+                    onClose={() => setIsImageLibraryOpen(false)}
+                    mangaName={mangaName}
+                />
+            )}
         </div>
     );
 };

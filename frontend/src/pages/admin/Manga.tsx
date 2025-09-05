@@ -201,7 +201,7 @@ const MangaAdmin = () => {
                       <div className="tooltip" data-tip="Quản lý Chương">
                         {/* Sử dụng <Link> thay vì <a> */}
                         <Link
-                          to={`/admin/mangas/${manga._id}`}
+                          to={`/admin/mangas/${manga.slug}/${manga._id}`}
                           className="btn btn-ghost btn-lg btn-circle"
                         >
                           <FiBookOpen className="text-success" />

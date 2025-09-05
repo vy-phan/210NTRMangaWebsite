@@ -42,14 +42,24 @@ declare global {
         _id: string;
         number: number;
         title: string;
-        manga: string; 
+        manga: string;
         images: ChapterImage[];
         createdAt?: string;
         updatedAt?: string;
     }
+
+    interface ImageUpload {
+        _id: string;
+        secure_url: string;
+        public_id: string;
+        folder: string;
+        mangaName: string;
+        createdAt: string; 
+        updatedAt: string; 
+    }
 }
 
-export {};
+export { };
 
 
 

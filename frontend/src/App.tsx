@@ -53,7 +53,7 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="mangas" element={<MangaAdmin />} />
                 <Route path="genres" element={<GenreAdmin />} />
-                <Route path="mangas/:mangaId" element={<ChapterAdmin />} />
+                <Route path="mangas/:mangaName/:mangaId" element={<ChapterAdmin />} />
               </Route>
             </Route>
 

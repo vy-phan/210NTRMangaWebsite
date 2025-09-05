@@ -82,6 +82,8 @@ const DetailManga = () => {
     fetchMangaDetails();
   }, [slug]); // Chạy lại mỗi khi slug thay đổi
 
+  const isOneshot = !isLoadingChapters && chapters.length === 1;
+
   // 4. Xử lý các trạng thái UI
   if (isLoading) return <DetailMangaSkeleton />;
 
@@ -143,38 +145,45 @@ const DetailManga = () => {
               {/* Nút hành động, chỉ hiển thị khi đã tải xong chương */}
               {!isLoadingChapters && chapters.length > 0 && (
                 <div className="flex flex-wrap gap-4 mt-2">
-                  {(() => {
-                    // Do mảng `chapters` đã được sắp xếp, việc tìm chương đầu/cuối trở nên cực kỳ đơn giản
-                    const firstChapter = chapters[0];
-                    const latestChapter = chapters[chapters.length - 1];
-
-                    // Lấy số chương để hiển thị (từ title) và số để điều hướng (từ number)
-                    // Chúng ta giả định title là một chuỗi số, ví dụ "1", "2.5"
-                    const firstChapterDisplayNumber = firstChapter.title;
-                    const latestChapterDisplayNumber = latestChapter.title;
-
-                    return (
-                      <>
-                        {/* Nút Đọc từ đầu */}
-                        <Link
-                          // Điều hướng theo `number` (index) đã được chuyển thành title (display) ở trang Chapter
-                          to={`/manga/${slug}/chapter/${latestChapterDisplayNumber}`}
-                          className="btn btn-primary btn-md"
-                        >
-                          <FiBookOpen /> Đọc từ đầu (Ch. {latestChapterDisplayNumber})
-                        </Link>
-
-                        {/* Nút Đọc chương mới nhất */}
-                        <Link
-                          to={`/manga/${slug}/chapter/${firstChapterDisplayNumber}`}
-                          className="btn btn-ghost btn-md border border-base-content/20"
-                        >
-                          <FiBookmark />
-                          Chương mới nhất (Ch. {firstChapterDisplayNumber})
-                        </Link>
-                      </>
-                    );
-                  })()}
+                  {isLoadingChapters ? (
+                    <div className="skeleton h-12 w-40 rounded-lg"></div>
+                  ) : chapters.length > 0 ? (
+                    isOneshot ? (
+                      // === HIỂN THỊ KHI LÀ ONESHOT ===
+                      <Link
+                        to={`/manga/${slug}/chapter/${chapters[0].number + 1}`}
+                        className="btn btn-primary btn-md"
+                      >
+                        <FiBookOpen /> Đọc Oneshot
+                      </Link>
+                    ) : (
+                      // === HIỂN THỊ KHI CÓ NHIỀU CHƯƠNG ===
+                      (() => {
+                        // Mảng đã được sắp xếp tăng dần, [0] là chương đầu, [length-1] là chương cuối
+                        const firstChapter = chapters[chapters.length - 1];
+                        const latestChapter = chapters[0];
+                        return (
+                          <>
+                            <Link
+                              to={`/manga/${slug}/chapter/${firstChapter.number + 1}`}
+                              className="btn btn-primary btn-md"
+                            >
+                              <FiBookOpen /> Đọc từ đầu (Ch. {firstChapter.title})
+                            </Link>
+                            <Link
+                              to={`/manga/${slug}/chapter/${latestChapter.number + 1}`}
+                              className="btn btn-ghost btn-md border border-base-content/20"
+                            >
+                              <FiBookmark /> Chương mới nhất (Ch. {latestChapter.title})
+                            </Link>
+                          </>
+                        );
+                      })()
+                    )
+                  ) : (
+                    // === HIỂN THỊ KHI CHƯA CÓ CHƯƠNG ===
+                    <button className="btn btn-disabled btn-md">Truyện chưa có chương</button>
+                  )}
                 </div>
               )}
 
@@ -220,7 +229,9 @@ const DetailManga = () => {
                         to={`/manga/${slug}/chapter/${chapter.number + 1}`}
                         className="flex justify-between items-center p-3 rounded-lg hover:bg-base-200"
                       >
-                        <span className="font-semibold">Chương {chapter.title}</span>
+                        <span className="font-semibold">
+                          {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
+                        </span>
                         <span className="text-sm text-base-content/60">{formatTimeAgo(chapter.createdAt)}</span>
                       </Link>
                     </li>

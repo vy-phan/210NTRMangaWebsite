@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiArrowLeft, FiArrowRight } from 'react-icons/fi';
+import { FiArrowLeft, FiArrowRight, FiArrowUp } from 'react-icons/fi';
 
 interface ChapterNavigationProps {
   mangaSlug: string;
@@ -11,6 +11,13 @@ interface ChapterNavigationProps {
 const ChapterNavigation = ({ mangaSlug, currentChapterDisplay, totalChapters, isHeader = false }: ChapterNavigationProps) => {
   const hasPrevious = currentChapterDisplay > 1;
   const hasNext = currentChapterDisplay < totalChapters;
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' // Cuộn mượt mà
+    });
+  };
 
   return (
     <div className="join">
@@ -33,6 +40,17 @@ const ChapterNavigation = ({ mangaSlug, currentChapterDisplay, totalChapters, is
       ) : (
         <button className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`} disabled>
           {isHeader && <span className="hidden md:inline">Sau</span>} <FiArrowRight />
+        </button>
+      )}
+
+      {!isHeader && (
+        <button 
+          onClick={scrollToTop}
+          className="join-item btn btn-primary" // Dùng màu primary để nổi bật
+          aria-label="Cuộn lên đầu trang"
+        >
+          <FiArrowUp />
+          <span className="hidden md:inline">Lên Đầu</span>
         </button>
       )}
     </div>

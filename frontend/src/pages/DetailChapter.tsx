@@ -24,8 +24,8 @@ const DetailChapter = () => {
   const [totalChapters, setTotalChapters] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
- const displayChapterNumber = Number(chapterNumber);
-  
+  const displayChapterNumber = Number(chapterNumber);
+
   // 'chapterIndex' sẽ là số chương MÁY SỬ DỤNG (bắt đầu từ 0)
   const chapterIndex = displayChapterNumber - 1;
 
@@ -151,11 +151,11 @@ const DetailChapter = () => {
       <footer className="p-4">
         <div className="container mx-auto flex justify-center">
           {/* === TÁI SỬ DỤNG COMPONENT ĐIỀU HƯỚNG === */}
-         <ChapterNavigation
-                mangaSlug={slug!}
-                currentChapterDisplay={displayChapterNumber}
-                totalChapters={totalChapters}
-            />
+          <ChapterNavigation
+            mangaSlug={slug!}
+            currentChapterDisplay={displayChapterNumber}
+            totalChapters={totalChapters}
+          />
         </div>
       </footer>
     </div>

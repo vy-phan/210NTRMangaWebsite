@@ -10,6 +10,7 @@ import mangaRouter from './routers/MangaRouters';
 import userRoutes from './routers/UserRouters';
 import genreRoutes from './routers/GenreRouters';
 import chapterRouter from './routers/ChapterRouters';
+import imageUploadRouter from './routers/ImageUploadRouters';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/manga', mangaRouter);
 app.use('/api/genres', genreRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chapters', chapterRouter);
+app.use('/api/images', imageUploadRouter);
 
 // Serve Frontend in Production
 if (process.env.NODE_ENV === 'production') {

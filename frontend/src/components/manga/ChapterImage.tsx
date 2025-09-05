@@ -9,6 +9,9 @@ interface ChapterImageProps {
 
 const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
   const { imageSrc, isLoading } = useImageLoader(src, './place-doro.webp');
+  const preventInteraction = (e: React.MouseEvent | React.DragEvent) => {
+    e.preventDefault();
+  };
 
   return (
     // Container để giữ tỷ lệ khung hình trong khi ảnh thật đang tải
@@ -23,6 +26,8 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
           ${isLoading ? 'opacity-0' : 'opacity-100'}
         `}
         referrerPolicy="no-referrer"
+        onContextMenu={preventInteraction}
+        onDragStart={preventInteraction}
       />
     </div>
   );
