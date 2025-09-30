@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {  FiColumns, FiTrash2 } from 'react-icons/fi'; // Đổi lại icon cho phù hợp
@@ -11,9 +11,10 @@ interface SortableImageItemProps {
   onUrlChange: (index: number, url: string) => void;
   onRemove: (index: number) => void;
   isRemoveDisabled: boolean;
+  showThumb?: boolean; // Tùy chọn hiển thị thumbnail để giảm tải khi nhiều ảnh
 }
 
-const SortableImageItem: React.FC<SortableImageItemProps> = ({ id, url, pageNumber, index, onUrlChange, onRemove, isRemoveDisabled }) => {
+const SortableImageItem: React.FC<SortableImageItemProps> = ({ id, url, pageNumber, index, onUrlChange, onRemove, isRemoveDisabled, showThumb = false }) => {
   const {
     attributes,
     listeners,
@@ -25,6 +26,7 @@ const SortableImageItem: React.FC<SortableImageItemProps> = ({ id, url, pageNumb
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    contain: 'content' as const, // cô lập layout/paint để giảm reflow khi kéo
   };
 
   return (
@@ -47,19 +49,19 @@ const SortableImageItem: React.FC<SortableImageItemProps> = ({ id, url, pageNumb
         className="input input-bordered grow"
       />
       
-      {url && (
+      {showThumb && url && (
         <div className="avatar">
           <div className="w-12 rounded">
-            <img src={url} alt={`Preview ${pageNumber}`} referrerPolicy="no-referrer" />
+            <img src={url} alt={`Preview ${pageNumber}`} referrerPolicy="no-referrer" loading="lazy" decoding="async" />
           </div>
         </div>
       )}
       
-      <button type-="button" onClick={() => onRemove(index)} className="btn btn-ghost btn-circle btn-sm" disabled={isRemoveDisabled}>
+      <button type="button" onClick={() => onRemove(index)} className="btn btn-ghost btn-circle btn-sm" disabled={isRemoveDisabled}>
         <FiTrash2 className="text-error" />
       </button>
     </div>
   );
 };
 
-export default SortableImageItem;
+export default memo(SortableImageItem);

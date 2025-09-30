@@ -7,6 +7,7 @@ import { getMangaBySlugAPI } from '../api/mangaApi';
 import MangaStatusBadge from '../components/common/MangaStatusBadge';
 import { getChaptersByMangaIdAPI } from '../api/chapterApi';
 import LazyImage from '../utils/LazyImage';
+import SeoTags from '../components/manga/SeoTags';
 
 // Component con để hiển thị skeleton loading
 const DetailMangaSkeleton = () => (
@@ -38,6 +39,19 @@ const DetailMangaSkeleton = () => (
 const DetailManga = () => {
   // 1. Lấy slug từ URL
   const { slug } = useParams<{ slug: string }>();
+
+  const toViStatus = (s?: 'Ongoing' | 'Completed' | 'Cancelled') => {
+    switch (s) {
+      case 'Ongoing':
+        return 'Đang cập nhật';
+      case 'Completed':
+        return 'Hoàn thành';
+      case 'Cancelled':
+        return 'Đã hủy';
+      default:
+        return '';
+    }
+  };
 
   // 2. State để quản lý dữ liệu, loading và lỗi
   const [manga, setManga] = useState<Manga | null>(null);
@@ -252,8 +266,36 @@ const DetailManga = () => {
               <p>Tính năng bình luận sẽ được cập nhật sớm.</p>
             </div>
           </section>
-        </div>
 
+          {/* SEO TAG */}
+          {manga && (
+            <SeoTags
+              title={`${manga.title} | Đọc truyện tranh online`}
+              description={manga.description || `${manga.title} - Đọc truyện tranh online, cập nhật chương mới nhất.`}
+              keywords={((() => {
+                const base: string[] = [
+                  manga.title,
+                  manga.slug,
+                  toViStatus(manga.status),
+                  'manga', 'truyện tranh', 'doc truyen', 'đọc truyện', 'chapter', 'oneshot', 'comic', 'manhwa', 'manga viet',
+                ];
+                const genreTokens = (manga.genres || []).map(g => typeof g === 'string' ? g : (g.name || g.slug)).filter(Boolean) as string[];
+                const combos = genreTokens.flatMap(gn => [
+                  `${manga.title} ${gn}`,
+                  `${gn} ${manga.title}`,
+                ]);
+                return [...base, ...genreTokens, ...combos].filter(Boolean);
+              })())}
+              image={manga.poster}
+              url={typeof window !== 'undefined' ? window.location.href : undefined}
+              type="article"
+              publishedTime={manga.createdAt}
+              updatedTime={manga.updatedAt}
+              canonical={typeof window !== 'undefined' ? window.location.href : undefined}
+              locale="vi_VN"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

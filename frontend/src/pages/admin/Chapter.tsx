@@ -123,7 +123,7 @@ const ChapterAdmin = () => {
                                     <td className="font-bold">{chapter.number}</td>
                                     <td>{chapter.title}</td>
                                     <td>{chapter.images.length}</td>
-                                    <td>{new Date(chapter.createdAt!).toLocaleDateString()}</td>
+                                    <td>{new Date(chapter.createdAt!).toLocaleDateString('vi-VN')}</td>
                                     <td className="w-38 text-center">
                                         <td className="w-32 text-center"> 
                                             <div className="flex justify-center items-center gap-1">

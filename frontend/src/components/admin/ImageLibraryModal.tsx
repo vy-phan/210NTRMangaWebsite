@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { toast } from 'react-hot-toast';
 import { FiX, FiUploadCloud, FiTrash2, FiCopy, FiClipboard } from 'react-icons/fi';
 import { deleteImageAPI, getImagesByMangaNameAPI, uploadImagesAPI } from '../../api/imageUpload';
@@ -14,6 +14,102 @@ interface ImageLibraryModalProps {
 
 // Caching: Lưu trữ dữ liệu ngoài component để nó không bị reset khi component unmount
 const imageCache = new Map<string, ImageUpload[]>();
+
+// Component tối ưu cho từng ảnh với memo để tránh re-render không cần thiết
+const ImageCard = memo(({ 
+    image, 
+    index, 
+    onDelete, 
+    onCopyUrl, 
+    onDoubleClick 
+}: { 
+    image: ImageUpload; 
+    index: number; 
+    onDelete: (id: string) => void; 
+    onCopyUrl: (url: string) => void; 
+    onDoubleClick: (index: number) => void;
+}) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [isInView, setIsInView] = useState(false);
+    const imgRef = useRef<HTMLDivElement>(null);
+
+    // Sử dụng Intersection Observer để lazy load ảnh
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        setIsInView(true);
+                        observer.disconnect();
+                    }
+                });
+            },
+            {
+                rootMargin: '100px', // Load trước 100px
+                threshold: 0.01
+            }
+        );
+
+        if (imgRef.current) {
+            observer.observe(imgRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div 
+            ref={imgRef}
+            className="card card-compact bg-base-100 shadow-xl group relative overflow-hidden cursor-pointer"
+            onDoubleClick={() => onDoubleClick(index)}
+        >
+            <figure className="aspect-square bg-base-200">
+                {isInView ? (
+                    <img 
+                        src={image.secure_url} 
+                        alt="Manga page" 
+                        className={`aspect-square object-cover transition-opacity duration-300 ${
+                            isLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        loading="lazy"
+                        onLoad={() => setIsLoaded(true)}
+                        decoding="async"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <span className="loading loading-spinner loading-sm"></span>
+                    </div>
+                )}
+            </figure>
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center items-center gap-2">
+                <div className="tooltip" data-tip="Sao chép URL">
+                    <button 
+                        className="btn btn-circle btn-sm btn-info" 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onCopyUrl(image.secure_url);
+                        }}
+                    >
+                        <FiCopy />
+                    </button>
+                </div>
+                <div className="tooltip" data-tip="Xóa ảnh">
+                    <button 
+                        className="btn btn-circle btn-sm btn-error" 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(image._id);
+                        }}
+                    >
+                        <FiTrash2 />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+ImageCard.displayName = 'ImageCard';
 
 const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: ImageLibraryModalProps) => {
     const [images, setImages] = useState<ImageUpload[]>([]);
@@ -97,27 +193,28 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
         });
     };
 
-    const handleDelete = (imageId: string) => {
+    const handleDelete = useCallback((imageId: string) => {
         if (!window.confirm("Bạn có chắc muốn xóa ảnh này vĩnh viễn?")) return;
 
         const deletePromise = deleteImageAPI(imageId);
         toast.promise(deletePromise, {
             loading: 'Đang xóa ảnh...',
             success: () => {
-                const updatedImages = images.filter(img => img._id !== imageId);
-                setImages(updatedImages);
-                // Cập nhật lại cache
-                imageCache.set(mangaName, updatedImages);
+                setImages(prev => {
+                    const updatedImages = prev.filter(img => img._id !== imageId);
+                    imageCache.set(mangaName, updatedImages);
+                    return updatedImages;
+                });
                 return 'Xóa ảnh thành công!';
             },
             error: (err) => err.message || 'Lỗi khi xóa ảnh.',
         });
-    };
+    }, [mangaName]);
 
-    const handleCopyUrl = (url: string) => {
+    const handleCopyUrl = useCallback((url: string) => {
         navigator.clipboard.writeText(url);
         toast.success("Đã sao chép URL!");
-    };
+    }, []);
     
     // =============================================================
     // CHỨC NĂNG MỚI: SAO CHÉP HÀNG LOẠT THEO ĐỊNH DẠNG INDEX:URL
@@ -141,9 +238,9 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
     // =============================================================
     // CHỨC NĂNG MỚI: MỞ LIGHTBOX KHI DOUBLE CLICK
     // =============================================================
-    const openLightbox = (index: number) => {
+    const openLightbox = useCallback((index: number) => {
         setLightboxIndex(index);
-    };
+    }, []);
 
 
     if (!isOpen) return null;
@@ -162,7 +259,11 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
                     </header>
                     
                     {/* Body */}
-                    <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                    <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto" style={{ 
+                        willChange: 'scroll-position',
+                        transform: 'translateZ(0)',
+                        WebkitOverflowScrolling: 'touch'
+                    }}>
                         {/* Upload Section */}
                         <div className="p-4 border border-dashed border-base-300 rounded-box flex flex-col md:flex-row items-center gap-4">
                             <input
@@ -193,26 +294,14 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
                         ) : (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                 {images.map((image, index) => (
-                                    <div 
-                                        key={image._id} 
-                                        className="card card-compact bg-base-100 shadow-xl group relative overflow-hidden cursor-pointer"
-                                        // Thêm sự kiện onDoubleClick
-                                        onDoubleClick={() => openLightbox(index)}
-                                    >
-                                        <figure><img src={image.secure_url} alt="Manga page" className="aspect-square object-cover" /></figure>
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center items-center gap-2">
-                                            <div className="tooltip" data-tip="Sao chép URL">
-                                                <button className="btn btn-circle btn-sm btn-info" onClick={() => handleCopyUrl(image.secure_url)}>
-                                                    <FiCopy />
-                                                </button>
-                                            </div>
-                                            <div className="tooltip" data-tip="Xóa ảnh">
-                                                <button className="btn btn-circle btn-sm btn-error" onClick={() => handleDelete(image._id)}>
-                                                    <FiTrash2 />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <ImageCard
+                                        key={image._id}
+                                        image={image}
+                                        index={index}
+                                        onDelete={handleDelete}
+                                        onCopyUrl={handleCopyUrl}
+                                        onDoubleClick={openLightbox}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -220,7 +309,6 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
                 </div>
                 <form method="dialog" className="modal-backdrop"><button onClick={onClose}>close</button></form>
             </dialog>
-
             {/* Lightbox Component */}
             <Lightbox
                 open={lightboxIndex > -1}

@@ -12,7 +12,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiSave, FiUploadCloud, FiX } from 'react-icons/fi';
 import SortableImageItem from '../../pages/admin/SortableImageItem';
 import toast from 'react-hot-toast';
@@ -34,6 +34,7 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [showThumb, setShowThumb] = useState(false);
 
     const [numImagesToAdd, setNumImagesToAdd] = useState(1);
 
@@ -70,13 +71,16 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
         setFormData(prev => ({ ...prev, [name]: name === 'number' ? Math.max(0, Number(value)) : value }));
     };
 
-    const handleImageChange = (index: number, url: string) => {
-        const newImages = [...formData.images];
-        newImages[index].url = url;
-        setFormData(prev => ({ ...prev, images: newImages }));
-    };
+    const handleImageChange = useCallback((index: number, url: string) => {
+        setFormData(prev => {
+            const newImages = [...prev.images];
+            if (!newImages[index] || newImages[index].url === url) return prev;
+            newImages[index] = { ...newImages[index], url };
+            return { ...prev, images: newImages };
+        });
+    }, []);
 
-    const addImageField = () => {
+    const addImageField = useCallback(() => {
         // Lấy số trang cuối cùng hiện có
         const lastPageNumber = formData.images.length > 0
             ? Math.max(...formData.images.map(img => img.pageNumber))
@@ -93,21 +97,22 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
 
         // Reset lại số lượng về 1 cho lần thêm tiếp theo
         setNumImagesToAdd(1);
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.images, numImagesToAdd]);
 
-    const removeImageField = (index: number) => {
+    const removeImageField = useCallback((index: number) => {
         if (formData.images.length <= 1) return;
         const newImages = formData.images.filter((_, i) => i !== index);
         setFormData(prev => ({ ...prev, images: newImages }));
-    };
+    }, [formData.images]);
 
     // === Logic của DND-KIT ===
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
-    const handleDragEnd = (event: any) => {
+    const handleDragEnd = useCallback((event: any) => {
         const { active, over } = event;
         if (active.id !== over.id) {
             setFormData((prev) => {
@@ -119,7 +124,7 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                 return { ...prev, images: arrayMove(prev.images, oldIndex, newIndex) };
             });
         }
-    };
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -238,7 +243,13 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
 
                     {/* Dynamic Image Fields */}
                     <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold">Danh sách ảnh (kéo thả để sắp xếp)</span></label>
+                        <div className="flex items-center justify-between mt-1">
+                            <label className="label"><span className="label-text font-semibold">Danh sách ảnh (kéo thả để sắp xếp)</span></label>
+                            <label className="label cursor-pointer">
+                                <span className="label-text">Hiển thumbnail</span>
+                                <input type="checkbox" className="toggle toggle-sm" checked={showThumb} onChange={(e) => setShowThumb(e.target.checked)} />
+                            </label>
+                        </div>
                         <DndContext
                             sensors={sensors}
                             collisionDetection={closestCenter}
@@ -260,11 +271,13 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                                             onUrlChange={handleImageChange}
                                             onRemove={removeImageField}
                                             isRemoveDisabled={formData.images.length <= 1}
+                                            showThumb={showThumb}
                                         />
                                     ))}
                                 </div>
                             </SortableContext>
                         </DndContext>
+                        
                         <div className="join w-full mt-3">
                             <input
                                 type="number"
@@ -321,25 +334,28 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                             Xem trước nội dung chương
                         </div>
                         <div className="collapse-content bg-black/80">
-                            <div className="max-h-[70vh] overflow-y-auto p-4 flex flex-col items-center space-y-2">
-                                {formData.images.map((image, index) => (
-                                    // Chỉ render preview nếu có URL hợp lệ
-                                    image.url && (
-                                        <div key={`preview-${index}`} className="text-center">
-                                            <p className="text-white/70 font-mono text-sm mb-1">- {index + 1} -</p>
-                                            <img
-                                                src={image.url}
-                                                alt={`Page ${index + 1}`}
-                                                className="max-w-full h-auto rounded"
-                                                referrerPolicy="no-referrer"
-                                            />
-                                        </div>
-                                    )
-                                ))}
-                                {formData.images.every(img => !img.url) && (
-                                    <p className="text-white/50 p-8">Chưa có ảnh nào để xem trước.</p>
-                                )}
-                            </div>
+                            {isPreviewOpen && (
+                                <div className="max-h-[70vh] overflow-y-auto p-4 flex flex-col items-center space-y-2">
+                                    {formData.images.map((image, index) => (
+                                        image.url && (
+                                            <div key={`preview-${index}`} className="text-center">
+                                                <p className="text-white/70 font-mono text-sm mb-1">- {index + 1} -</p>
+                                                <img
+                                                    src={image.url}
+                                                    alt={`Page ${index + 1}`}
+                                                    className="max-w-full h-auto rounded"
+                                                    referrerPolicy="no-referrer"
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                />
+                                            </div>
+                                        )
+                                    ))}
+                                    {formData.images.every(img => !img.url) && (
+                                        <p className="text-white/50 p-8">Chưa có ảnh nào để xem trước.</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 
