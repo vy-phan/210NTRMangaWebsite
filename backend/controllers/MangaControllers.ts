@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Manga from '../models/MangaModels';
 import asyncHandler from 'express-async-handler';
+import Chapter from '../models/ChapterModels';
 
 /**
  * @desc    Get a single manga by its ID
@@ -97,12 +98,15 @@ export const deleteManga = asyncHandler(async (req: Request, res: Response) => {
         throw new Error("Invalid manga ID format");
     }
 
-    const manga = await Manga.findByIdAndDelete(id);
+    const manga = await Manga.findById(id);
 
     if (!manga) {
         res.status(404);
         throw new Error("Manga not found, cannot delete");
     }
+
+    await Chapter.deleteMany({ manga: id });
+    await Manga.findByIdAndDelete(id);
 
     res.status(200).json({ success: true, message: "Manga deleted successfully" });
 });
