@@ -33,6 +33,11 @@ declare global {
         updatedAt: string;
     }
 
+    interface UpdateUserProfileData {
+        displayName?: string;
+        avatarUrl?: string;
+    }
+
     interface ChapterImage {
         url: string;
         pageNumber: number;
@@ -54,8 +59,8 @@ declare global {
         public_id: string;
         folder: string;
         mangaName: string;
-        createdAt: string; 
-        updatedAt: string; 
+        createdAt: string;
+        updatedAt: string;
     }
 }
 

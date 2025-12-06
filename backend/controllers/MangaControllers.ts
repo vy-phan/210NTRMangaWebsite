@@ -28,6 +28,29 @@ export const getMangaById = asyncHandler(async (req: Request, res: Response) => 
 });
 
 /**
+ * @desc    Get only manga title by its ID
+ * @route   GET /api/manga/:id/title
+ * @access  Public
+ */
+export const getMangaTitleById = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        res.status(404);
+        throw new Error("Invalid manga ID format");
+    }
+
+    const manga = await Manga.findById(id).select('title');
+
+    if (!manga) {
+        res.status(404);
+        throw new Error("Manga not found");
+    }
+
+    res.status(200).json({ success: true, data: manga });
+});
+
+/**
  * @desc    Get a single manga by its slug
  * @route   GET /api/manga/slug/:slug
  * @access  Public

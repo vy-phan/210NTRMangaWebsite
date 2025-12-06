@@ -5,25 +5,36 @@ import { getChaptersByMangaIdAPI, createChapterAPI, updateChapterAPI, deleteChap
 import ChapterModal from '../../components/admin/ChapterModal';
 import { FiPlus, FiEdit, FiTrash2, FiImage } from 'react-icons/fi';
 import ImageLibraryModal from '../../components/admin/ImageLibraryModal';
+import { getMangaTitleByIdAPI } from '../../api/mangaApi';
 
 const ChapterAdmin = () => {
-   const { mangaId, mangaName } = useParams<{ mangaId: string, mangaName: string }>(); 
+    const { mangaId, mangaName } = useParams<{ mangaId: string, mangaName: string }>();
     const [chapters, setChapters] = useState<Chapter[]>([]);
+    const [currentMangaTitle, setCurrentMangaTitle] = useState<string>('Đang tải...');
     const [isLoading, setIsLoading] = useState(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
     const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
-     const [isImageLibraryOpen, setIsImageLibraryOpen] = useState(false);
+    const [isImageLibraryOpen, setIsImageLibraryOpen] = useState(false);
 
     useEffect(() => {
         if (!mangaId) return;
         const fetchChapters = async () => {
             try {
                 setIsLoading(true);
-                const data = await getChaptersByMangaIdAPI(mangaId);
-                const sortedData = data.sort((a, b) => a.number - b.number);
+                const [chaptersData, mangaData] = await Promise.all([
+                    getChaptersByMangaIdAPI(mangaId),
+                    getMangaTitleByIdAPI(mangaId)
+                ]);
+
+                // Xử lý danh sách chương
+                const sortedData = chaptersData.sort((a, b) => a.number - b.number);
                 setChapters(sortedData);
+
+                // Xử lý tên truyện
+                setCurrentMangaTitle(mangaData.title);
+
             } catch (error) {
                 toast.error("Không thể tải danh sách chương.");
             } finally {
@@ -89,6 +100,8 @@ const ChapterAdmin = () => {
             <header className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold">Quản lý Chương</h1>
+                    <h1 className="text-2xl font-bold text-primary py-3">{currentMangaTitle}</h1>
+
                     <Link to={`/admin/mangas`} className="text-sm link link-hover">← Quay lại danh sách truyện</Link>
                 </div>
                 <div className="flex items-center gap-2">
@@ -125,31 +138,29 @@ const ChapterAdmin = () => {
                                     <td>{chapter.images.length}</td>
                                     <td>{new Date(chapter.createdAt!).toLocaleDateString('vi-VN')}</td>
                                     <td className="w-38 text-center">
-                                        <td className="w-32 text-center"> 
-                                            <div className="flex justify-center items-center gap-1">
-
-                                                {/* Nút Sửa */}
-                                                <div className="tooltip" data-tip="Sửa chương">
-                                                    <button
-                                                        className="btn btn-ghost btn-lg btn-circle"
-                                                        onClick={() => handleOpenEditModal(chapter)}
-                                                    >
-                                                        <FiEdit className="text-info" />
-                                                    </button>
-                                                </div>
-
-                                                {/* Nút Xóa */}
-                                                <div className="tooltip" data-tip="Xóa chương">
-                                                    <button
-                                                        className="btn btn-ghost btn-lg btn-circle" 
-                                                        onClick={() => handleDeleteChapter(chapter._id)}
-                                                    >
-                                                        <FiTrash2 className="text-error" />
-                                                    </button>
-                                                </div>
-
+                                        <div className="flex justify-center items-center gap-1">
+                                            {/* Nút Sửa */}
+                                            <div className="tooltip" data-tip="Sửa chương">
+                                                <button
+                                                    className="btn btn-ghost btn-lg btn-circle"
+                                                    onClick={() => handleOpenEditModal(chapter)}
+                                                >
+                                                    <FiEdit className="text-info" />
+                                                </button>
                                             </div>
-                                        </td>
+
+                                            {/* Nút Xóa */}
+                                            <div className="tooltip" data-tip="Xóa chương">
+                                                <button
+                                                    className="btn btn-ghost btn-lg btn-circle"
+                                                    onClick={() => handleDeleteChapter(chapter._id)}
+                                                >
+                                                    <FiTrash2 className="text-error" />
+                                                </button>
+                                            </div>
+
+                                        </div>
+
                                     </td>
                                 </tr>
                             ))}

@@ -48,6 +48,20 @@ export const getLengthMangasAPI = async (): Promise<number> => {
     }
 }
 
+export const getMangaTitleByIdAPI = async (id: string): Promise<{ _id: string; title: string }> => {
+    try {
+        const response = await apiClient.get(`/manga/${id}/title`);
+        if (response.data && response.data.success) {
+            return response.data.data;
+        } else {
+            throw new Error(response.data.message || 'Failed to fetch manga title');
+        }
+    } catch (error) {
+        console.error("Error fetching manga title:", error);
+        throw error;
+    }
+};
+
 
 export const createMangaAPI = async (mangaData: MangaInput): Promise<Manga> => {
     try {

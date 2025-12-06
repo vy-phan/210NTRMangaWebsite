@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatTimeAgo } from '../../utils/dateFomat';
 
@@ -11,6 +11,19 @@ interface RankingItemProps {
 }
 
 const RankingItem = ({ manga, rank }: RankingItemProps) => {
+  const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+  useEffect(() => {
+    const checkHiddenState = () => {
+      setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
+    };
+
+    window.addEventListener('storage-local-change', checkHiddenState);
+    
+    return () => {
+      window.removeEventListener('storage-local-change', checkHiddenState);
+    };
+  }, []);
+
   // Lấy màu sắc đặc biệt cho top 3
   const rankColor =
     rank === 1 ? 'text-red-500' :
@@ -28,8 +41,15 @@ const RankingItem = ({ manga, rank }: RankingItemProps) => {
 
         {/* Ảnh bìa */}
         <div className="avatar flex-shrink-0">
-          <div className="w-16 rounded-md shadow">
-            <img src={manga.poster} alt={manga.title} referrerPolicy="no-referrer" />
+          <div className="w-16 rounded-md shadow overflow-hidden"> 
+            {/* overflow-hidden ở thẻ cha giúp bo góc mượt hơn khi ảnh bị blur */}
+            <img 
+              src={manga.poster} 
+              alt={manga.title} 
+              referrerPolicy="no-referrer"
+              // 3. Logic làm mờ ảnh (blur-lg)
+              className={`transition-all duration-300 ${isContentHidden ? 'blur-md scale-110' : 'blur-0 scale-100'}`}
+            />
           </div>
         </div>
 
@@ -51,7 +71,6 @@ const RankingItem = ({ manga, rank }: RankingItemProps) => {
     </li>
   );
 };
-
 
 
 // Component chính, bây giờ nhận `mangas` làm prop

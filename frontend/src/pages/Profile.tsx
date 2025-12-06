@@ -1,13 +1,60 @@
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { FiEdit, FiShield } from 'react-icons/fi';
+import { getCurrentUserAPI, updateUserProfileAPI } from '../api/authApi';
+import AvatarSelectionModal from '../components/auth/AvatarSelectionModal';
+import toast from 'react-hot-toast';
 
 const Profile = () => {
-  // 1. Lấy thông tin user và trạng thái loading từ Zustand store
-  const { user, isLoading } = useAuthStore();
+  const { user, token, isLoading, setUser } = useAuthStore();
+  const modalRef = useRef<HTMLDialogElement>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // 2. Xử lý trạng thái đang tải
-  // Quan trọng để đợi AuthListener kiểm tra session khi tải lại trang
+  const handleOpenModal = () => {
+    modalRef.current?.showModal();
+  };
+
+
+  const handleSaveProfile = async (newAvatarUrl: string, newDisplayName: string) => {
+    if (!user || !token) return;
+
+    setIsUpdating(true);
+
+    try {
+      const updateData: { avatarUrl?: string; displayName?: string } = {};
+      
+      if (newAvatarUrl !== user.avatarUrl) updateData.avatarUrl = newAvatarUrl;
+      if (newDisplayName !== user.displayName) updateData.displayName = newDisplayName;
+
+
+      if (Object.keys(updateData).length === 0) {
+         setIsUpdating(false);
+         return;
+      }
+
+
+      await updateUserProfileAPI(updateData);
+      const freshUserData = await getCurrentUserAPI();
+      const mergedUser = {
+          ...user, 
+          displayName: freshUserData.displayName,
+          avatarUrl: freshUserData.avatarUrl,
+          updatedAt: freshUserData.updatedAt 
+      };
+
+      setUser(mergedUser, token);
+      toast.success("Cập nhật thành công!");
+
+    } catch (error) {
+      console.error("Lỗi update:", error);
+      toast.error("Cập nhật thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // --- UI RENDERING (Không thay đổi) ---
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -16,7 +63,6 @@ const Profile = () => {
     );
   }
 
-  // 3. Xử lý trường hợp người dùng chưa đăng nhập nhưng cố vào trang
   if (!user) {
     return (
       <div className="container mx-auto p-8 text-center">
@@ -26,9 +72,15 @@ const Profile = () => {
     );
   }
 
-  // 4. Giao diện chính khi đã có dữ liệu người dùng
   return (
     <div className="bg-base-200 min-h-screen p-4 md:p-8">
+      {/* Overlay Loading */}
+      {isUpdating && (
+          <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+          </div>
+      )}
+
       <div className="container mx-auto max-w-2xl">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body items-center text-center">
@@ -44,24 +96,19 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Tên và Vai trò */}
+            {/* Display Name */}
             <h2 className="card-title text-3xl">{user.displayName}</h2>
             {user.role === 'admin' && (
               <div className="badge badge-primary gap-1">
-                <FiShield size={12} />
-                Quản trị viên
+                <FiShield size={12} /> Quản trị viên
               </div>
             )}
              {user.role === 'user' && (
-              <div className="badge badge-ghost">
-                Thành viên
-              </div>
+              <div className="badge badge-ghost">Thành viên</div>
             )}
             
-            {/* Dấu ngăn cách */}
             <div className="divider my-6">Thông tin chi tiết</div>
 
-            {/* Bảng thông tin */}
             <div className="w-full text-left space-y-3">
               <div className="flex justify-between">
                 <span className="text-base-content/70">Email:</span>
@@ -81,16 +128,26 @@ const Profile = () => {
               </div>
             </div>
             
-            {/* Các nút hành động */}
             <div className="card-actions justify-center mt-8">
-              <button className="btn btn-outline" disabled>
-                <FiEdit />
-                Chỉnh sửa hồ sơ
+              <button 
+                onClick={handleOpenModal} 
+                className="btn btn-outline"
+                disabled={isUpdating}
+              >
+                <FiEdit /> Chỉnh sửa hồ sơ
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      <AvatarSelectionModal 
+        modalRef={modalRef}
+        currentAvatar={user.avatarUrl || ''}
+        currentName={user.displayName || ''}
+        onSave={handleSaveProfile}
+      />
+
     </div>
   );
 };

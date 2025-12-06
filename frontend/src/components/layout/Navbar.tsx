@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
-import { FiSun, FiMoon, FiMenu, FiLogOut } from 'react-icons/fi';
+import { FiSun, FiMoon, FiMenu, FiLogOut, FiEyeOff, FiEye } from 'react-icons/fi';
 
 const Navbar = () => {
     const { user, logout: logoutFromStore } = useAuthStore();
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+    const [isHidden, setIsHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -14,11 +16,19 @@ const Navbar = () => {
     }, [theme]);
 
 
+    useEffect(() => {
+        localStorage.setItem('isContentHidden', isHidden.toString());
+        window.dispatchEvent(new Event('storage-local-change'));
+    }, [isHidden]);
+
+    const handleVisibilityChange = () => {
+        setIsHidden(prev => !prev);
+    };
+
     const handleThemeChange = () => {
         const newTheme = theme === 'light' ? 'night' : 'light';
         setTheme(newTheme);
     };
-
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -46,7 +56,7 @@ const Navbar = () => {
                 <Link to="/" className="btn btn-ghost text-xl font-bold p-2">
                     {/* <img src="./logo.png" alt="Logo" className='w-14'/> */}
                     210 NTR Manga
-                    </Link>
+                </Link>
             </div>
 
             {/* --- Navbar Center (Desktop) --- */}
@@ -58,6 +68,15 @@ const Navbar = () => {
 
             {/* --- Navbar End --- */}
             <div className="navbar-end gap-2">
+                <button
+                    onClick={handleVisibilityChange}
+                    className="btn btn-ghost btn-circle"
+                    aria-label="Toggle content visibility"
+                    title={isHidden ? "Hiện nội dung" : "Ẩn nội dung"}
+                >
+                    {isHidden ? <FiEyeOff className="h-6 w-6" /> : <FiEye className="h-6 w-6" />}
+                </button>
+
                 <button onClick={handleThemeChange} className="btn btn-ghost btn-circle" aria-label="Toggle theme">
                     {theme === 'light' ? <FiMoon className="h-6 w-6" /> : <FiSun className="h-6 w-6" />}
                 </button>
