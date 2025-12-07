@@ -1,12 +1,11 @@
-import { Suspense, lazy } from 'react'; // 1. Import lazy và Suspense
+import { Suspense, lazy } from 'react'; 
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AuthListener from './components/auth/AuthListener';
 
-// Các component cốt lõi (Core) nên giữ import thường để hiển thị ngay lập tức
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import NotFound from './pages/NotFound'; // Trang 404 nhẹ, import thường cũng được
+import NotFound from './pages/NotFound'; 
 
 // 2. Chuyển đổi các trang (Pages) sang Lazy Load
 // User Pages
@@ -30,7 +29,7 @@ const LayoutAdmin = lazy(() => import('./components/layout/LayoutAdmin'));
 import AdminRouteGuard from './components/auth/AdminRouteGuard';
 import AuthRouteGuard from './components/auth/AuthRouteGuard';
 
-// 3. Component hiển thị khi đang tải trang (Loading UI)
+
 const LoadingFallback = () => (
   <div className="flex flex-col justify-center items-center h-[60vh]">
     <span className="loading loading-spinner loading-lg text-primary"></span>

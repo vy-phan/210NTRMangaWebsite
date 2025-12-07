@@ -4,18 +4,14 @@ import User from '../models/UserModels';
 import { supabase } from '../config/supabase';
 
 export const syncUserProfile = asyncHandler(async (req: Request, res: Response) => {
-    // 1. Kiểm tra sự tồn tại của header `Authorization`
     const authHeader = req.headers.authorization;
-
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         res.status(401);
         throw new Error("Authorization token is missing or malformed");
     }
 
-    // 2. Chỉ tách token khi đã chắc chắn header tồn tại và đúng định dạng
     const token = authHeader.split(' ')[1];
 
-    // 3. Xác thực token với Supabase
     const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
 
     if (error || !supabaseUser) {
@@ -23,7 +19,6 @@ export const syncUserProfile = asyncHandler(async (req: Request, res: Response) 
         throw new Error("Invalid Supabase user or token");
     }
 
-    // 4. Logic còn lại không thay đổi
     const { id: supabaseId, email, user_metadata, app_metadata } = supabaseUser;
 
     const displayName = user_metadata.full_name || user_metadata.user_name || 'Anonymous';
@@ -33,15 +28,20 @@ export const syncUserProfile = asyncHandler(async (req: Request, res: Response) 
     const user = await User.findOneAndUpdate(
         { supabaseId: supabaseId },
         {
+            // $set: Chỉ cập nhật những trường cần đồng bộ liên tục (như Email, Provider)
+            // Nếu user đăng nhập lại, ta KHÔNG muốn ghi đè tên/ảnh custom của họ
             $set: {
                 email: email,
-                displayName: displayName,
-                avatarUrl: avatarUrl,
                 providers: provider,
             },
+            
+            // $setOnInsert: Chỉ chạy KHI TẠO MỚI user lần đầu tiên
+            // Lúc này mới lấy tên/ảnh từ Google/Discord làm mặc định
             $setOnInsert: {
                 supabaseId: supabaseId,
                 role: 'user',
+                displayName: displayName, 
+                avatarUrl: avatarUrl,     
             }
         },
         {

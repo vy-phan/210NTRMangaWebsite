@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../config/supabase';
 import { useAuthStore } from '../../store/useAuthStore';
-import { syncUserProfileAPI } from '../../api/authApi';
+import { getCurrentUserAPI, syncUserProfileAPI } from '../../api/authApi';
 
 const AuthListener = () => {
     const navigate = useNavigate();
@@ -22,6 +22,21 @@ const AuthListener = () => {
                 useAuthStore.setState({ token: session.access_token });
             }
 
+            const syncAndFetchCustomProfile = async (token: string) => {
+                const baseProfile = await syncUserProfileAPI(token);
+                const freshUserData = await getCurrentUserAPI();
+
+                // Bước 3: Merge dữ liệu
+                const mergedUser = {
+                    ...baseProfile,
+                    displayName: freshUserData.displayName,
+                    avatarUrl: freshUserData.avatarUrl,
+                    updatedAt: freshUserData.updatedAt
+                };
+
+                return mergedUser;
+            };
+
             // === TRƯỜNG HỢP 1: NGƯỜI DÙNG ĐĂNG NHẬP THÀNH CÔNG (lần đầu qua OAuth) ===
             // Điều kiện `!currentUser` đảm bảo logic này chỉ chạy khi chưa có user trong store,
             // tức là ngay sau khi hoàn tất OAuth redirect.
@@ -31,12 +46,12 @@ const AuthListener = () => {
 
                 const loadingToast = toast.loading('Đang đồng bộ tài khoản...');
                 try {
-                    const userProfile = await syncUserProfileAPI(token);
-                    setUser(userProfile, token);
+                    const finalUser = await syncAndFetchCustomProfile(token);
+                    
+                    setUser(finalUser, token);
                     toast.dismiss(loadingToast);
-                    toast.success(`Chào mừng trở lại, ${userProfile.displayName}!`);
-
-                    // CHỈ CHUYỂN HƯỚNG TRONG TRƯỜNG HỢP NÀY
+                    toast.success(`Chào mừng trở lại, ${finalUser.displayName}!`);
+                    
                     navigate('/');
 
                 } catch (error) {
