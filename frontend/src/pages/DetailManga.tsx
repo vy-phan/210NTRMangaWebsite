@@ -8,6 +8,8 @@ import MangaStatusBadge from '../components/common/MangaStatusBadge';
 import { getChaptersByMangaIdAPI } from '../api/chapterApi';
 import LazyImage from '../utils/LazyImage';
 import SeoTags from '../components/manga/SeoTags';
+import ShareChapterModal from '../components/manga/ShareChapterModal';
+import ChapterListDownloadButton from '../components/manga/ChapterListDownloadButton';
 
 // Component con để hiển thị skeleton loading
 const DetailMangaSkeleton = () => (
@@ -156,68 +158,58 @@ const DetailManga = () => {
                 ))}
               </div>
 
-              {/* Nút hành động, chỉ hiển thị khi đã tải xong chương */}
-              {!isLoadingChapters && chapters.length > 0 && (
-                <div className="flex flex-wrap gap-4 mt-2">
-                  {isLoadingChapters ? (
-                    <div className="skeleton h-12 w-40 rounded-lg"></div>
-                  ) : chapters.length > 0 ? (
-                    isOneshot ? (
-                      // === HIỂN THỊ KHI LÀ ONESHOT ===
-                      <Link
-                        to={`/manga/${slug}/chapter/${chapters[0].number + 1}`}
-                        className="btn btn-primary btn-md"
-                      >
-                        <FiBookOpen /> Đọc Oneshot
-                      </Link>
-                    ) : (
-                      // === HIỂN THỊ KHI CÓ NHIỀU CHƯƠNG ===
-                      (() => {
-                        // Mảng đã được sắp xếp tăng dần, [0] là chương đầu, [length-1] là chương cuối
-                        const firstChapter = chapters[chapters.length - 1];
-                        const latestChapter = chapters[0];
-                        return (
-                          <>
-                            <Link
-                              to={`/manga/${slug}/chapter/${firstChapter.number + 1}`}
-                              className="btn btn-primary btn-md"
-                            >
-                              <FiBookOpen /> Đọc từ đầu (Ch. {firstChapter.title})
-                            </Link>
-                            <Link
-                              to={`/manga/${slug}/chapter/${latestChapter.number + 1}`}
-                              className="btn btn-ghost btn-md border border-base-content/20"
-                            >
-                              <FiBookmark /> Chương mới nhất (Ch. {latestChapter.title})
-                            </Link>
-                          </>
-                        );
-                      })()
-                    )
-                  ) : (
-                    // === HIỂN THỊ KHI CHƯA CÓ CHƯƠNG ===
-                    <button className="btn btn-disabled btn-md">Truyện chưa có chương</button>
-                  )}
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-3 mt-2">
+                {isLoadingChapters && (
+                  <div className="skeleton h-12 w-40 rounded-lg"></div>
+                )}
 
-              {/* Hiển thị thông báo nếu chưa có chương */}
-              {!isLoadingChapters && chapters.length === 0 && (
-                <div className="mt-2">
+                {!isLoadingChapters && chapters.length > 0 && (
+                  isOneshot ? (
+                    // === Case: Oneshot ===
+                    <Link
+                      to={`/manga/${slug}/chapter/${chapters[0].number + 1}`}
+                      className="btn btn-primary btn-md"
+                    >
+                      <FiBookOpen /> Đọc Oneshot
+                    </Link>
+                  ) : (
+                    // === Case: Nhiều chương ===
+                    (() => {
+                      const firstChapter = chapters[chapters.length - 1];
+                      const latestChapter = chapters[0];
+                      return (
+                        <>
+                          <Link
+                            to={`/manga/${slug}/chapter/${firstChapter.number + 1}`}
+                            className="btn btn-primary btn-md"
+                          >
+                            <FiBookOpen /> Đọc từ đầu (Ch. {firstChapter.title})
+                          </Link>
+                          <Link
+                            to={`/manga/${slug}/chapter/${latestChapter.number + 1}`}
+                            className="btn btn-ghost btn-md border border-base-content/20"
+                          >
+                            <FiBookmark /> Chương mới nhất (Ch. {latestChapter.title})
+                          </Link>
+                        </>
+                      );
+                    })()
+                  )
+                )}
+
+                {!isLoadingChapters && chapters.length === 0 && (
                   <button className="btn btn-disabled btn-md">Truyện chưa có chương</button>
-                </div>
-              )}
+                )}
+
+                <ShareChapterModal />
+              </div>
+
             </div>
           </div>
         </section>
         <div className="container mx-auto p-4 md:px-8 mt-8">
-          {/*=== THÊM SECTION MÔ TẢ VÀO ĐÂY === */}
-          {/* === SECTION MÔ TẢ (HIỂN THỊ TRỰC TIẾP) === */}
           <section className="mb-12">
-            {/* Tiêu đề của section */}
             <h2 className="text-2xl font-bold mb-4 border-l-4 border-primary pl-2">Tóm tắt nội dung</h2>
-
-            {/* Panel chứa nội dung mô tả */}
             <div className="bg-base-100 p-4 md:p-6 rounded-box shadow-lg">
               <p className="text-base-content/90 whitespace-pre-wrap">
                 {manga.description || "Truyện này hiện chưa có mô tả."}
@@ -238,16 +230,30 @@ const DetailManga = () => {
               ) : chapters.length > 0 ? (
                 <ul className="space-y-2 max-h-96 overflow-y-auto">
                   {chapters.map(chapter => (
-                    <li key={chapter._id}>
+                    <li 
+                      key={chapter._id} 
+                      className="flex justify-between items-center p-3 rounded-lg hover:bg-base-200 transition-colors group"
+                    >
+                      {/* Cột Trái: Link đến chương */}
                       <Link
                         to={`/manga/${slug}/chapter/${chapter.number + 1}`}
-                        className="flex justify-between items-center p-3 rounded-lg hover:bg-base-200"
+                        className="flex-grow font-semibold text-base-content group-hover:text-primary transition-colors"
                       >
-                        <span className="font-semibold">
-                          {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
-                        </span>
-                        <span className="text-sm text-base-content/60">{formatTimeAgo(chapter.createdAt)}</span>
+                        {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
                       </Link>
+
+                      {/* Cột Phải: Thời gian + Nút Download */}
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-base-content/60 hidden sm:inline-block">
+                            {formatTimeAgo(chapter.createdAt)}
+                        </span>
+                        
+                        {/* Nút Download */}
+                        <ChapterListDownloadButton 
+                            slug={slug!} 
+                            chapter={chapter} 
+                        />
+                      </div>
                     </li>
                   ))}
                 </ul>

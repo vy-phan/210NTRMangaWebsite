@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChapterByNumberAPI, getChaptersByMangaIdAPI } from '../api/chapterApi';
-import { FiHome } from 'react-icons/fi';
+import { FiHome, FiWifiOff } from 'react-icons/fi'; // Import thêm icon WifiOff
 import ChapterNavigation from '../components/manga/ChapterNavigation';
 import { useKeyPress } from '../utils/useKeyPress';
 import ChapterImage from '../components/manga/ChapterImage';
+import ShareChapterModal from '../components/manga/ShareChapterModal';
+import { getChapterOffline } from '../utils/offlineDB';
 
 // Component Skeleton
 const ChapterSkeleton = () => (
@@ -22,6 +24,10 @@ const DetailChapter = () => {
   const [chapterList, setChapterList] = useState<Chapter[]>([]);
   const [currentMangaId, setCurrentMangaId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 2. THÊM STATE ĐỂ NHẬN BIẾT ĐANG OFFLINE
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+
   const displayChapterNumber = Number(chapterNumber);
   const chapterIndex = displayChapterNumber - 1;
   const totalChapters = chapterList.length;
@@ -43,7 +49,7 @@ const DetailChapter = () => {
   useKeyPress('ArrowRight', goToNextChapter);
   useKeyPress('d', goToNextChapter);
 
-  // === EFFECT 1: Tải Nội dung Chương (Chạy khi đổi Chapter) ===
+  // === EFFECT 1: Tải Nội dung Chương (ĐÃ SỬA LOGIC FALLBACK) ===
   useEffect(() => {
     if (!slug || chapterNumber === undefined || isNaN(displayChapterNumber)) {
       toast.error("URL không hợp lệ.");
@@ -53,30 +59,47 @@ const DetailChapter = () => {
     const fetchChapterContent = async () => {
       try {
         setIsLoading(true);
+        setIsOfflineMode(false); // Mặc định thử Online trước
 
-        // 1. Lấy nội dung chương hiện tại
+        // --- BƯỚC 1: THỬ GỌI API ONLINE ---
         const { chapter: currentChapterData } = await getChapterByNumberAPI(slug, chapterIndex);
         
-        // Sắp xếp ảnh
         if (currentChapterData.images) {
             currentChapterData.images.sort((a, b) => a.pageNumber - b.pageNumber);
         }
         setChapter(currentChapterData);
 
-        // 2. Kiểm tra và cập nhật ID truyện
-        // Logic này để kích hoạt Effect 2 bên dưới chạy (chỉ 1 lần)
         if (currentChapterData.manga && typeof currentChapterData.manga === 'object' && '_id' in currentChapterData.manga) {
             const mangaId = (currentChapterData.manga as { _id: string })._id;
-            
-            // Chỉ set nếu ID khác với hiện tại (để tránh re-render không cần thiết)
             if (mangaId !== currentMangaId) {
                 setCurrentMangaId(mangaId);
             }
         }
 
       } catch (error) {
-        console.error(error);
-        toast.error("Lỗi tải dữ liệu.");
+        // --- BƯỚC 2: NẾU API LỖI (MẤT MẠNG) -> GỌI OFFLINE DB ---
+        console.warn("API Error, attempting offline load...");
+        
+        try {
+            const offlineData = await getChapterOffline(slug, chapterIndex);
+            
+            if (offlineData) {
+                const offlineChapter: any = {
+                    ...offlineData,
+                    manga: { title: offlineData.mangaTitle, _id: 'offline-id' }, 
+                };
+
+                setChapter(offlineChapter);
+                setIsOfflineMode(true); // Bật chế độ offline
+                toast.success('Đang đọc chế độ Offline', { icon: '📡' });
+            } else {
+                throw new Error("Chưa tải chương này");
+            }
+        } catch (offlineError) {
+            console.error("Offline load failed:", offlineError);
+            toast.error("Mất kết nối và chưa tải chương này.");
+        }
+
       } finally {
         setIsLoading(false);
       }
@@ -85,13 +108,14 @@ const DetailChapter = () => {
     window.scrollTo(0, 0);
     fetchChapterContent();
     
-    // Dependencies: Chỉ chạy khi slug hoặc số chương thay đổi
   }, [slug, chapterNumber]); 
 
 
-  // === EFFECT 2: Tải Danh sách List (Chỉ chạy 1 lần khi currentMangaId thay đổi) ===
+  // === EFFECT 2: Tải Danh sách (GIỮ NGUYÊN) ===
+  // Lưu ý: Khi offline, cái này sẽ lỗi network, nhưng không sao,
+  // chúng ta đã chặn lỗi ở catch bên dưới rồi.
   useEffect(() => {
-    if (!currentMangaId) return;
+    if (!currentMangaId || isOfflineMode) return; 
 
     const fetchChapterList = async () => {
         try {
@@ -99,12 +123,12 @@ const DetailChapter = () => {
             const sortedList = allChapters.sort((a, b) => a.number - b.number);    
             setChapterList(sortedList);
         } catch (error) {
-            console.error("Lỗi tải danh sách chương:", error);
+            console.error("Không tải được danh sách chương (có thể do offline).");
         }
     };
 
     fetchChapterList();
-  }, [currentMangaId]);
+  }, [currentMangaId, isOfflineMode]);
 
 
   const handleChapterSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -132,12 +156,13 @@ const DetailChapter = () => {
           </Link>
 
           {/* === DROPDOWN === */}
+          {/* Khi Offline, chapterList có thể rỗng, dropdown sẽ chỉ hiện chương hiện tại */}
           <select
             className="select select-bordered select-sm max-w-xs font-bold"
             value={displayChapterNumber}
             onChange={handleChapterSelect}
+            disabled={isOfflineMode && chapterList.length === 0} // Disable nếu offline mà ko có list
           >
-            {/* Nếu list đã load xong thì hiển thị list, nếu chưa thì hiển thị tạm chương hiện tại */}
             {chapterList.length > 0 ? (
                 chapterList.map((chap, index) => (
                 <option key={chap._id} value={index + 1}>
@@ -152,13 +177,21 @@ const DetailChapter = () => {
           <ChapterNavigation
             mangaSlug={slug!}
             currentChapterDisplay={displayChapterNumber}
-            totalChapters={totalChapters || 1} // Fallback là 1 để tránh lỗi hiển thị nếu list chưa về
+            totalChapters={totalChapters || 1} 
             isHeader={true}
           />
         </div>
       </header>
 
       <main className="flex flex-col items-center">
+        {/* THANH THÔNG BÁO OFFLINE */}
+        {isOfflineMode && (
+            <div className="w-full bg-warning text-warning-content text-center text-sm py-1 font-bold flex justify-center items-center gap-2">
+                <FiWifiOff />
+                Bạn đang xem bản lưu Offline
+            </div>
+        )}
+
         {/* Tiêu đề chương */}
         <div className="text-center py-4 text-base-content/50 text-sm">
            {typeof chapter.manga === 'object' && 'title' in chapter.manga ? (chapter.manga as { title: string }).title : ''} - {chapter.title}
@@ -173,13 +206,19 @@ const DetailChapter = () => {
         ))}
       </main>
 
-      <footer className="p-4">
-        <div className="container mx-auto flex justify-center">
+      <footer className="p-4 pb-8">
+        <div className="container mx-auto flex flex-col items-center gap-4">
+          
           <ChapterNavigation
             mangaSlug={slug!}
             currentChapterDisplay={displayChapterNumber}
             totalChapters={totalChapters || 1}
           />
+
+          <div className="flex gap-2 mt-2">
+             <ShareChapterModal />
+          </div>
+
         </div>
       </footer>
     </div>

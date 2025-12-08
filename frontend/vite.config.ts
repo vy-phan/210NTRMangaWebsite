@@ -1,27 +1,64 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  plugins: [react()],
+ plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      manifest: {
+        name: 'Manga Reader Offline',
+        short_name: 'MangaApp',
+        description: 'Đọc truyện tranh offline',
+        theme_color: '#ffffff',
+        icons: [
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'CacheFirst',
+            
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 5000, // Lưu tối đa 5000 ảnh
+                maxAgeSeconds: 60 * 24 * 60 * 60, // 60 ngày
+              },
+              // QUAN TRỌNG NHẤT:
+              // status 0: Là ảnh từ domain khác bị CORS (Opaque Response)
+              // status 200: Là ảnh bình thường
+              cacheableResponse: {
+                statuses: [0, 200], 
+              },
+            },
+          },
+        ],
+      },
+      devOptions: {
+        enabled: true, 
+      }
+    })
+  ],
   build: {
-    // Tăng giới hạn cảnh báo lên (để đỡ bị spam warning)
-    chunkSizeWarningLimit: 1600, 
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // 1. Tách riêng Recharts (vì nó rất nặng và chỉ dùng ở Admin)
             if (id.includes('recharts')) {
               return 'recharts';
             }
-            
-            // 2. Tách riêng Supabase (nếu thư viện này lớn)
+
             if (id.includes('@supabase')) {
               return 'supabase';
             }
-
-            // 3. QUAN TRỌNG: Tất cả các thư viện còn lại (React, Router, DaisyUI...)
-            // gom chung vào 1 file 'vendor' để đảm bảo tính toàn vẹn và thứ tự load.
             return 'vendor';
           }
         },

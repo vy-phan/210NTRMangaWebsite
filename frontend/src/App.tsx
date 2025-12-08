@@ -1,13 +1,15 @@
-import { Suspense, lazy } from 'react'; 
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AuthListener from './components/auth/AuthListener';
 
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import NotFound from './pages/NotFound'; 
+import NotFound from './pages/NotFound';
 
 // 2. Chuyển đổi các trang (Pages) sang Lazy Load
+const OfflinePage = lazy(() => import('./pages/OfflinePage')); 
+
 // User Pages
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -28,6 +30,8 @@ const LayoutAdmin = lazy(() => import('./components/layout/LayoutAdmin'));
 // Guards (Giữ nguyên import thường hoặc lazy đều được, nhưng import thường an toàn hơn cho logic)
 import AdminRouteGuard from './components/auth/AdminRouteGuard';
 import AuthRouteGuard from './components/auth/AuthRouteGuard';
+import { useNetworkStatus } from './hook/useNetworkStatus';
+import { FiWifiOff } from 'react-icons/fi';
 
 
 const LoadingFallback = () => (
@@ -38,6 +42,8 @@ const LoadingFallback = () => (
 );
 
 function App() {
+  const isOnline = useNetworkStatus();
+
   return (
     <div className="flex flex-col min-h-screen">
       <Router>
@@ -45,7 +51,15 @@ function App() {
         <AuthListener />
 
         <Navbar />
-        
+
+         {!isOnline && (
+            <div className="bg-error text-error-content px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-2 sticky top-0 z-[100]">
+                <FiWifiOff />
+                Bạn đang Offline. Một số hình ảnh hoặc tính năng có thể không hoạt động.
+                <a href="/offline" className="underline hover:text-white ml-2">Đến Tủ sách Offline</a>
+            </div>
+        )}
+
         <main className="flex-grow">
           {/* 4. Bọc Routes bằng Suspense */}
           <Suspense fallback={<LoadingFallback />}>
@@ -74,12 +88,14 @@ function App() {
                 </Route>
               </Route>
 
+              <Route path="/offline" element={<OfflinePage />} />
+
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </main>
-        
+
         <Footer />
       </Router>
     </div>
