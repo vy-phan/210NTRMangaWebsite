@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { FiBookOpen, FiBookmark, FiClock, FiMessageSquare } from 'react-icons/fi';
+import { FiBookOpen, FiBookmark, FiClock, FiMaximize2, FiMessageSquare, FiX } from 'react-icons/fi';
 import { formatTimeAgo } from '../utils/dateFomat';
-import { getMangaBySlugAPI } from '../api/mangaApi';
+import { getMangaBySlugAPI, getRelatedMangasAPI } from '../api/mangaApi';
 import MangaStatusBadge from '../components/common/MangaStatusBadge';
 import { getChaptersByMangaIdAPI } from '../api/chapterApi';
 import LazyImage from '../utils/LazyImage';
 import SeoTags from '../components/manga/SeoTags';
 import ShareChapterModal from '../components/manga/ShareChapterModal';
 import ChapterListDownloadButton from '../components/manga/ChapterListDownloadButton';
+import RelatedMangaList from '../components/manga/RelatedMangaList';
 
 // Component con để hiển thị skeleton loading
 const DetailMangaSkeleton = () => (
@@ -62,7 +63,61 @@ const DetailManga = () => {
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isLoadingChapters, setIsLoadingChapters] = useState(true);
+  const [relatedMangas, setRelatedMangas] = useState<Manga[]>([]);
+  const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
 
+  const zoomModalRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const checkHiddenState = () => {
+      setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
+    };
+    window.addEventListener('storage-local-change', checkHiddenState);
+    return () => {
+      window.removeEventListener('storage-local-change', checkHiddenState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!slug) {
+      setError("Không tìm thấy slug truyện.");
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchMangaDetails = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getMangaBySlugAPI(slug);
+        setManga(data);
+
+        if (data?._id) {
+          // 1. Fetch Chapters (Giữ nguyên)
+          setIsLoadingChapters(true);
+          getChaptersByMangaIdAPI(data._id)
+            .then(setChapters)
+            .catch(console.error)
+            .finally(() => setIsLoadingChapters(false));
+
+          // 2. Fetch Related Mangas (MỚI THÊM)
+          // Lấy danh sách ID của các thể loại
+          const genreIds = data.genres?.map((g: any) => typeof g === 'string' ? g : g._id) || [];
+
+          if (genreIds.length > 0) {
+            getRelatedMangasAPI(data._id, genreIds)
+              .then(setRelatedMangas)
+              .catch(console.error);
+          }
+        }
+      } catch (err) {
+        setError("Không tìm thấy truyện hoặc đã có lỗi xảy ra.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMangaDetails();
+  }, [slug]);
 
   useEffect(() => {
     if (!slug) {
@@ -97,6 +152,12 @@ const DetailManga = () => {
 
     fetchMangaDetails();
   }, [slug]); // Chạy lại mỗi khi slug thay đổi
+
+  const handleZoomImage = () => {
+    if (zoomModalRef.current) {
+      zoomModalRef.current.showModal();
+    }
+  };
 
   const isOneshot = !isLoadingChapters && chapters.length === 1;
 
@@ -134,9 +195,23 @@ const DetailManga = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
 
             {/* Cột Poster (Đã sửa) */}
-            <div className="md:col-span-1">
-              <figure className="aspect-[3/4] w-full max-w-xs rounded-lg shadow-2xl overflow-hidden mx-auto lg:mx-0">
-                <img src={manga.poster} alt={manga.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            <div className="md:col-span-1 group relative cursor-zoom-in" onClick={handleZoomImage}>
+              <figure className="aspect-[3/4] w-full max-w-xs rounded-lg shadow-2xl overflow-hidden mx-auto lg:mx-0 bg-base-300 relative">
+                <img
+                  src={manga.poster}
+                  alt={manga.title}
+                  className={`
+                        w-full h-full object-cover transition-all duration-500
+                        ${isContentHidden ? 'blur-xl scale-110' : 'blur-0 scale-100'}
+                        group-hover:scale-105
+                    `}
+                  referrerPolicy="no-referrer"
+                />
+
+                {/* Icon Zoom gợi ý khi hover */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20">
+                  <FiMaximize2 className="text-white w-10 h-10 drop-shadow-lg" />
+                </div>
               </figure>
             </div>
 
@@ -228,30 +303,37 @@ const DetailManga = () => {
                   ))}
                 </div>
               ) : chapters.length > 0 ? (
-                <ul className="space-y-2 max-h-96 overflow-y-auto">
+                <ul className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
                   {chapters.map(chapter => (
-                    <li 
-                      key={chapter._id} 
-                      className="flex justify-between items-center p-3 rounded-lg hover:bg-base-200 transition-colors group"
+                    <li
+                      key={chapter._id}
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-base-200 transition-colors group border border-transparent hover:border-base-300"
                     >
-                      {/* Cột Trái: Link đến chương */}
-                      <Link
-                        to={`/manga/${slug}/chapter/${chapter.number + 1}`}
-                        className="flex-grow font-semibold text-base-content group-hover:text-primary transition-colors"
-                      >
-                        {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
-                      </Link>
+                      {/* === KHU VỰC TRÁI: TEXT (Title + Time Mobile) === */}
+                      <div className="flex flex-col flex-grow min-w-0 pr-3">
+                        <Link
+                          to={`/manga/${slug}/chapter/${chapter.number + 1}`}
+                          className="font-semibold text-base-content group-hover:text-primary transition-colors truncate block"
+                          title={isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
+                        >
+                          {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
+                        </Link>
 
-                      {/* Cột Phải: Thời gian + Nút Download */}
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-base-content/60 hidden sm:inline-block">
-                            {formatTimeAgo(chapter.createdAt)}
+                        {/* Thời gian (Chỉ hiện trên Mobile - Nằm dưới tiêu đề) */}
+                        <span className="text-xs text-base-content/50 mt-0.5 sm:hidden">
+                          {formatTimeAgo(chapter.createdAt)}
                         </span>
-                        
-                        {/* Nút Download */}
-                        <ChapterListDownloadButton 
-                            slug={slug!} 
-                            chapter={chapter} 
+                      </div>
+
+                      {/* === KHU VỰC PHẢI: ACTIONS (Time PC + Download) === */}
+                      <div className="flex items-center gap-3 shrink-0">
+
+                        <span className="text-sm text-base-content/60 hidden sm:inline-block">
+                          {formatTimeAgo(chapter.createdAt)}
+                        </span>
+                        <ChapterListDownloadButton
+                          slug={slug!}
+                          chapter={chapter}
                         />
                       </div>
                     </li>
@@ -272,6 +354,57 @@ const DetailManga = () => {
               <p>Tính năng bình luận sẽ được cập nhật sớm.</p>
             </div>
           </section>
+
+          {relatedMangas.length > 0 && (
+            <RelatedMangaList mangas={relatedMangas} />
+          )}
+
+          <dialog ref={zoomModalRef} className="modal">
+            {/* 1. Backdrop: Chỉnh màu đen nhạt hơn (60%) để thấy nền web phía sau */}
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-0"></div>
+
+            {/* 2. Container: Loại bỏ max-width mặc định, cho phép ảnh to thoải mái theo chiều cao */}
+            <div className="modal-box max-w-none w-auto p-4 bg-transparent shadow-none overflow-visible flex justify-center items-center z-10">
+
+              {/* Nút Đóng (Đưa ra xa một chút cho thoáng) */}
+              <form method="dialog">
+                <button className="btn btn-circle btn-ghost text-white absolute -top-2 -right-2 md:top-4 md:right-4 z-50 bg-black/20 hover:bg-black/50 border-none backdrop-blur-md">
+                  <FiX className="w-6 h-6" />
+                </button>
+              </form>
+
+              {/* 3. Ảnh Full */}
+              <img
+                src={manga.poster}
+                alt={manga.title}
+                className={`
+                /* Kích thước: Cao 90% màn hình, rộng tự động */
+                h-[85vh] md:h-[90vh] w-auto object-contain 
+                
+                /* Bo góc và đổ bóng sâu để tạo cảm giác nổi 3D */
+                rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)]
+                
+                /* Animation & Hover Effect */
+                transition-all duration-300 ease-out
+                hover:scale-[1.02] hover:shadow-[0_0_70px_rgba(0,0,0,0.7)]
+                
+                /* Logic Blur */
+                ${isContentHidden ? 'blur-2xl scale-100' : ''} 
+            `}
+                referrerPolicy="no-referrer"
+                // Click vào ảnh để bỏ che (nếu đang che) hoặc đóng modal (nếu không che - tuỳ chọn)
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isContentHidden) setIsContentHidden(false);
+                }}
+              />
+            </div>
+
+            {/* Click backdrop để đóng */}
+            <form method="dialog" className="modal-backdrop">
+              <button>close</button>
+            </form>
+          </dialog>
 
           {/* SEO TAG */}
           {manga && (

@@ -6,6 +6,7 @@ import ChapterModal from '../../components/admin/ChapterModal';
 import { FiPlus, FiEdit, FiTrash2, FiImage } from 'react-icons/fi';
 import ImageLibraryModal from '../../components/admin/ImageLibraryModal';
 import { getMangaTitleByIdAPI } from '../../api/mangaApi';
+import { formatSmartTime } from '../../utils/dateFomat';
 
 const ChapterAdmin = () => {
     const { mangaId, mangaName } = useParams<{ mangaId: string, mangaName: string }>();
@@ -126,7 +127,7 @@ const ChapterAdmin = () => {
                                 <th>Số Chương</th>
                                 <th>Tiêu đề</th>
                                 <th>Số lượng ảnh</th>
-                                <th>Ngày tạo</th>
+                                <th>Cập nhật gần nhất</th>
                                 <th className="text-center">Hành động</th>
                             </tr>
                         </thead>
@@ -136,7 +137,14 @@ const ChapterAdmin = () => {
                                     <td className="font-bold">{chapter.number}</td>
                                     <td>{chapter.title}</td>
                                     <td>{chapter.images.length}</td>
-                                    <td>{new Date(chapter.createdAt!).toLocaleDateString('vi-VN')}</td>
+                                    <td>
+                                        <span className="md:hidden">
+                                            {new Date(chapter.updatedAt!).toLocaleDateString('vi-VN')}
+                                        </span>
+                                        <span className="hidden md:inline">
+                                            {formatSmartTime(chapter.updatedAt!)}
+                                        </span>
+                                    </td>
                                     <td className="w-38 text-center">
                                         <div className="flex justify-center items-center gap-1">
                                             {/* Nút Sửa */}

@@ -69,6 +69,31 @@ export const getMangaBySlug = asyncHandler(async (req: Request, res: Response) =
 });
 
 /**
+ * @desc    Get related mangas based on genres
+ * @route   POST /api/manga/related
+ * @access  Public
+ */
+export const getRelatedMangas = asyncHandler(async (req: Request, res: Response) => {
+    const { currentId, genreIds } = req.body;
+
+    if (!currentId || !genreIds || !Array.isArray(genreIds)) {
+        res.status(400);
+        throw new Error("Missing parameters");
+    }
+
+    const relatedMangas = await Manga.find({
+        _id: { $ne: currentId }, // Loại trừ truyện hiện tại
+        genres: { $in: genreIds }, // Tìm truyện có chứa các genre này
+        status: { $ne: 'Cancelled' } // (Tùy chọn) Không lấy truyện đã hủy
+    })
+    .populate('genres') 
+    .sort({ updatedAt: -1 }) 
+    .limit(6);
+
+    res.status(200).json({ success: true, data: relatedMangas });
+});
+
+/**
  * @desc    Get all mangas
  * @route   GET /api/manga
  * @access  Public

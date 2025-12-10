@@ -167,8 +167,41 @@ const MangaAdmin = () => {
                     </a>
                   </td>
                   <td className="max-w-xs">
-                    <div className="flex flex-wrap gap-1">
-                      {manga.genres?.map(genre => typeof genre !== 'string' && <div key={genre._id} className="badge badge-outline">{genre.name}</div>)}
+                    <div className="flex flex-wrap gap-1 items-center">
+                      {manga.genres?.slice(0, 4).map((genre) => (
+                        typeof genre !== 'string' && (
+                          <div key={genre._id} className="badge badge-outline text-xs whitespace-nowrap">
+                            {genre.name}
+                          </div>
+                        )
+                      ))}
+
+                      {(manga.genres?.length || 0) > 4 && (
+                        <div className="dropdown dropdown-hover dropdown-right dropdown-end">
+
+                          {/* Nút kích hoạt (+ số lượng) */}
+                          <div tabIndex={0} role="button" className="badge badge-ghost badge-xs font-bold cursor-help hover:bg-base-300 transition-colors">
+                            +{(manga.genres?.length || 0) - 4}
+                          </div>
+
+                          {/* Nội dung xổ ra khi Hover */}
+                          <div
+                            tabIndex={0}
+                            className="dropdown-content z-[50] p-3 shadow-xl bg-base-200 text-base-content rounded-box w-64 border border-base-300"
+                          >
+                            <div className="text-xs font-bold mb-2 opacity-50 uppercase">Các thể loại khác:</div>
+                            <div className="flex flex-wrap gap-2">
+                              {manga.genres?.map((genre) => (
+                                typeof genre !== 'string' && (
+                                  <span key={genre._id} className="badge badge-primary badge-outline badge-sm">
+                                    {genre.name}
+                                  </span>
+                                )
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td>

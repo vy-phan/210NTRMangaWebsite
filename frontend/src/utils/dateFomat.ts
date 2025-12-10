@@ -51,3 +51,35 @@ export const formatTimeAgo = (dateInput: string | Date | null | undefined): stri
 
   return "vừa xong"; // Mặc định nếu chênh lệch quá nhỏ
 };
+
+export const formatSmartTime = (dateString: string | Date) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    // Tính khoảng cách thời gian bằng giây
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    // 1. Nếu dưới 1 phút
+    if (diffInSeconds < 60) {
+        return 'Vừa xong';
+    }
+    
+    // 2. Nếu dưới 1 giờ -> Hiển thị phút
+    if (diffInSeconds < 3600) {
+        return `${Math.floor(diffInSeconds / 60)} phút trước`;
+    }
+
+    // 3. Nếu dưới 24 giờ -> Hiển thị giờ
+    if (diffInSeconds < 86400) {
+        return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+    }
+
+    // 4. Kiểm tra xem có phải "Hôm qua" không
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+        return 'Hôm qua';
+    }
+
+    // 5. Còn lại -> Hiển thị ngày tháng năm (VD: 15/05/2024)
+    return date.toLocaleDateString('vi-VN');
+};

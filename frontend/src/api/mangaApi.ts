@@ -5,7 +5,6 @@ export type MangaInput = Omit<Manga, '_id' | 'createdAt' | 'updatedAt' | 'genres
     genres: string[];
 };
 
-
 export const getAllMangasAPI = async (): Promise<Manga[]> => {
     try {
         const response = await apiClient.get('/manga');
@@ -33,6 +32,20 @@ export const getMangaBySlugAPI = async (slug: string): Promise<Manga> => {
         throw error;
     }
 }
+
+export const getRelatedMangasAPI = async (currentId: string, genreIds: string[]): Promise<Manga[]> => {
+    try {
+        const response = await apiClient.post('/manga/related', { currentId, genreIds });
+        if (response.data && response.data.success) {
+            return response.data.data;
+        } else {
+            return []; 
+        }
+    } catch (error) {
+        console.error("Error fetching related mangas:", error);
+        return [];
+    }
+};
 
 export const getLengthMangasAPI = async (): Promise<number> => {
     try {

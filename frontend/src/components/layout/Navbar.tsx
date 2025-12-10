@@ -53,9 +53,13 @@ const Navbar = () => {
                         {navLinks}
                     </ul>
                 </div>
-                <Link to="/" className="btn btn-ghost text-xl font-bold p-2">
-                    {/* <img src="./logo.png" alt="Logo" className='w-14'/> */}
-                    210 NTR Manga
+                <Link to="/" className="btn btn-ghost p-1 h-auto min-h-0 hover:bg-transparent">
+                    <img 
+                        // Logic đổi ảnh theo theme
+                        src={theme === 'light' ? '/logoLight.png' : '/logoNight.png'} 
+                        alt="210 NTR Manga" 
+                        className="h-10 md:h-14 md:pl-20 w-auto object-contain transition-all duration-300"
+                    />
                 </Link>
             </div>
 

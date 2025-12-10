@@ -2,3 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ẩn thanh cuộn cho Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+/* Ẩn thanh cuộn cho IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
