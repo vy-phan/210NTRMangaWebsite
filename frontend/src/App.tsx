@@ -32,6 +32,8 @@ import AdminRouteGuard from './components/auth/AdminRouteGuard';
 import AuthRouteGuard from './components/auth/AuthRouteGuard';
 import { useNetworkStatus } from './hook/useNetworkStatus';
 import { FiWifiOff } from 'react-icons/fi';
+import CategoryPage from './pages/CategoryPage';
+import BannerAdmin from './pages/admin/Banner';
 
 
 const LoadingFallback = () => (
@@ -71,6 +73,7 @@ function App() {
               <Route path="/search" element={<Search />} />
               <Route path="/genre" element={<Genre />} />
               <Route path="/genre/:slug" element={<DetailGenre />} />
+              <Route path="/category/:categoryName" element={<CategoryPage />} />
               <Route path="/login" element={<Login />} />
 
               {/* Protected User Routes */}
@@ -82,6 +85,7 @@ function App() {
               <Route element={<AdminRouteGuard />}>
                 <Route path="/admin" element={<LayoutAdmin />}>
                   <Route index element={<Dashboard />} />
+                  <Route path="banners" element={<BannerAdmin />} />
                   <Route path="mangas" element={<MangaAdmin />} />
                   <Route path="genres" element={<GenreAdmin />} />
                   <Route path="mangas/:mangaName/:mangaId" element={<ChapterAdmin />} />

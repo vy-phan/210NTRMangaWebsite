@@ -102,6 +102,7 @@ const DetailManga = () => {
           // 2. Fetch Related Mangas (MỚI THÊM)
           // Lấy danh sách ID của các thể loại
           const genreIds = data.genres?.map((g: any) => typeof g === 'string' ? g : g._id) || [];
+          
 
           if (genreIds.length > 0) {
             getRelatedMangasAPI(data._id, genreIds)
@@ -226,6 +227,12 @@ const DetailManga = () => {
 
               <div className="flex flex-wrap items-center gap-2 my-4">
                 <MangaStatusBadge status={manga.status} />
+                <Link to={`/category/${manga.category}`} className={`badge badge-outline font-semibold ${manga.category === 'Manga'
+                  ? 'badge-info '
+                  : 'badge-secondary'
+                  }`}>
+                  {manga.category}
+                </Link>
                 {manga.genres?.map(genre => typeof genre !== 'string' && (
                   <Link key={genre._id} to={`/genre/${genre.slug}`} className="badge badge-ghost badge-outline hover:bg-primary hover:text-primary-content">
                     {genre.name}

@@ -69,6 +69,26 @@ export const getMangaBySlug = asyncHandler(async (req: Request, res: Response) =
 });
 
 /**
+ * @desc    Get mangas by category (Manga, Manhwa)
+ * @route   GET /api/manga/category/:category
+ * @access  Public
+ */
+export const getMangaByCategory = asyncHandler(async (req: Request, res: Response) => {
+    const { category } = req.params;
+
+    const mangas = await Manga.find({ 
+        category: { $regex: new RegExp(`^${category}$`, 'i') } 
+    })
+    .populate('genres')
+    .sort({ updatedAt: -1 });
+
+    res.status(200).json({ 
+        success: true, 
+        data: mangas 
+    });
+});
+
+/**
  * @desc    Get related mangas based on genres
  * @route   POST /api/manga/related
  * @access  Public

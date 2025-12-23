@@ -17,6 +17,7 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
         description: '',
         status: 'Ongoing',
         poster: '',
+        category: 'Manga',
         genres: [] as string[],
     });
     const [allGenres, setAllGenres] = useState<Genre[]>([]);
@@ -49,10 +50,11 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
                 description: initialData.description || '',
                 status: initialData.status || 'Ongoing',
                 poster: initialData.poster || '',
+                category: (initialData as any).category || 'Manga',
                 genres: (initialData.genres?.map(g => typeof g === 'string' ? g : g._id) || []) as string[],
             });
         } else {
-            setFormData({ title: '', description: '', status: 'Ongoing', poster: '', genres: [] });
+            setFormData({ title: '', description: '', status: 'Ongoing', poster: '', category: 'Manga', genres: [] });
         }
     }, [isOpen, mode, initialData]);
 
@@ -154,7 +156,7 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
                     </div>
 
                     {/* Slug & Status Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="form-control">
                             <label className="label">
                                 <span className="label-text font-semibold flex items-center gap-2">
@@ -191,6 +193,26 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
                                 <option value="Ongoing">Đang tiến hành</option>
                                 <option value="Completed">Đã hoàn thành</option>
                                 <option value="Cancelled">Đã hủy</option>
+                            </select>
+                        </div>
+
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    Loại truyện
+                                </span>
+                            </label>
+                            <select
+                                name="category"
+                                value={formData.category}
+                                onChange={handleChange}
+                                className="select select-bordered focus:select-primary"
+                            >
+                                <option value="Manga">Manga</option>
+                                <option value="Manhwa">Manhwa</option>
                             </select>
                         </div>
                     </div>

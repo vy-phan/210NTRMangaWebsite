@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChapterByNumberAPI, getChaptersByMangaIdAPI } from '../api/chapterApi';
-import { FiHome, FiWifiOff } from 'react-icons/fi'; // Import thêm icon WifiOff
+import { FiHome, FiWifiOff } from 'react-icons/fi';
 import ChapterNavigation from '../components/manga/ChapterNavigation';
 import { useKeyPress } from '../utils/useKeyPress';
 import ChapterImage from '../components/manga/ChapterImage';
 import ShareChapterModal from '../components/manga/ShareChapterModal';
 import { getChapterOffline } from '../utils/offlineDB';
+import AutoScrollControl from '../components/manga/AutoScrollControl';
 
 // Component Skeleton
 const ChapterSkeleton = () => (
@@ -24,14 +25,61 @@ const DetailChapter = () => {
   const [chapterList, setChapterList] = useState<Chapter[]>([]);
   const [currentMangaId, setCurrentMangaId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // 2. THÊM STATE ĐỂ NHẬN BIẾT ĐANG OFFLINE
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  // === 1. STATE CHO AUTO SCROLL (PAGE DOWN MODE) ===
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [scrollDelay, setScrollDelay] = useState(5); // Mặc định 5 giây nhảy 1 lần
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const displayChapterNumber = Number(chapterNumber);
   const chapterIndex = displayChapterNumber - 1;
   const totalChapters = chapterList.length;
 
+  // === 2. LOGIC XỬ LÝ AUTO SCROLL (PAGE DOWN) ===
+  useEffect(() => {
+    if (isAutoScrolling) {
+      scrollIntervalRef.current = setInterval(() => {
+        // Tính toán vị trí
+        const currentScroll = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.body.scrollHeight;
+
+        // Nếu đã đến cuối trang -> Tự động dừng
+        if (currentScroll + windowHeight >= docHeight - 50) { // -50px sai số
+          setIsAutoScrolling(false);
+          toast("Đã cuộn đến cuối trang");
+          if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+          return;
+        }
+
+        // Thực hiện cuộn "Page Down"
+        // Scroll 90% màn hình để giữ lại 1 chút context (10%) của đoạn trước
+        window.scrollBy({
+          top: windowHeight * 0.9,
+          behavior: 'smooth'
+        });
+
+      }, scrollDelay * 1000); // Đổi giây sang ms
+    } else {
+      // Clear interval nếu tắt
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+      }
+    }
+
+    // Cleanup khi component unmount
+    return () => {
+      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+    };
+  }, [isAutoScrolling, scrollDelay]);
+
+  // Reset Auto Scroll khi chuyển chương mới
+  useEffect(() => {
+    setIsAutoScrolling(false);
+  }, [slug, chapterNumber]);
+
+  // Các hàm điều hướng (Giữ nguyên)
   const goToPreviousChapter = () => {
     if (!isLoading && slug && displayChapterNumber > 1) {
       navigate(`/manga/${slug}/chapter/${displayChapterNumber - 1}`);
@@ -49,48 +97,34 @@ const DetailChapter = () => {
   useKeyPress('ArrowRight', goToNextChapter);
   useKeyPress('d', goToNextChapter);
 
-  // === EFFECT 1: Tải Nội dung Chương (ĐÃ SỬA LOGIC FALLBACK) ===
+  // Effect fetch chapter content (Giữ nguyên logic của bạn)
   useEffect(() => {
     if (!slug || chapterNumber === undefined || isNaN(displayChapterNumber)) {
       toast.error("URL không hợp lệ.");
       return;
     }
-
     const fetchChapterContent = async () => {
       try {
         setIsLoading(true);
-        setIsOfflineMode(false); // Mặc định thử Online trước
-
-        // --- BƯỚC 1: THỬ GỌI API ONLINE ---
+        setIsOfflineMode(false);
         const { chapter: currentChapterData } = await getChapterByNumberAPI(slug, chapterIndex);
-
-        if (currentChapterData.images) {
-          currentChapterData.images.sort((a, b) => a.pageNumber - b.pageNumber);
-        }
+        if (currentChapterData.images) currentChapterData.images.sort((a, b) => a.pageNumber - b.pageNumber);
         setChapter(currentChapterData);
-
         if (currentChapterData.manga && typeof currentChapterData.manga === 'object' && '_id' in currentChapterData.manga) {
           const mangaId = (currentChapterData.manga as { _id: string })._id;
-          if (mangaId !== currentMangaId) {
-            setCurrentMangaId(mangaId);
-          }
+          if (mangaId !== currentMangaId) setCurrentMangaId(mangaId);
         }
-
       } catch (error) {
-        // --- BƯỚC 2: NẾU API LỖI (MẤT MẠNG) -> GỌI OFFLINE DB ---
         console.warn("API Error, attempting offline load...");
-
         try {
           const offlineData = await getChapterOffline(slug, chapterIndex);
-
           if (offlineData) {
             const offlineChapter: any = {
               ...offlineData,
               manga: { title: offlineData.mangaTitle, _id: 'offline-id' },
             };
-
             setChapter(offlineChapter);
-            setIsOfflineMode(true); // Bật chế độ offline
+            setIsOfflineMode(true);
             toast.success('Đang đọc chế độ Offline', { icon: '📡' });
           } else {
             throw new Error("Chưa tải chương này");
@@ -99,37 +133,28 @@ const DetailChapter = () => {
           console.error("Offline load failed:", offlineError);
           toast.error("Mất kết nối và chưa tải chương này.");
         }
-
       } finally {
         setIsLoading(false);
       }
     };
-
     window.scrollTo(0, 0);
     fetchChapterContent();
-
   }, [slug, chapterNumber]);
 
-
-  // === EFFECT 2: Tải Danh sách (GIỮ NGUYÊN) ===
-  // Lưu ý: Khi offline, cái này sẽ lỗi network, nhưng không sao,
-  // chúng ta đã chặn lỗi ở catch bên dưới rồi.
+  // Effect fetch chapter list (Giữ nguyên)
   useEffect(() => {
     if (!currentMangaId || isOfflineMode) return;
-
     const fetchChapterList = async () => {
       try {
         const allChapters = await getChaptersByMangaIdAPI(currentMangaId);
         const sortedList = allChapters.sort((a, b) => a.number - b.number);
         setChapterList(sortedList);
       } catch (error) {
-        console.error("Không tải được danh sách chương (có thể do offline).");
+        console.error("Không tải được danh sách chương.");
       }
     };
-
     fetchChapterList();
   }, [currentMangaId, isOfflineMode]);
-
 
   const handleChapterSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedIndex = Number(e.target.value);
@@ -148,20 +173,18 @@ const DetailChapter = () => {
   }
 
   return (
-    <div className="bg-base-300 text-base-content min-h-screen">
+    <div className="bg-base-300 text-base-content min-h-screen relative">
       <header className="sticky top-0 z-50 bg-base-300/80 backdrop-blur-sm shadow-lg p-2">
         <div className="container mx-auto flex justify-between items-center gap-2">
           <Link to={`/manga/${slug}`} className="btn btn-ghost" title="Về trang truyện">
             <FiHome />
           </Link>
 
-          {/* === DROPDOWN === */}
-          {/* Khi Offline, chapterList có thể rỗng, dropdown sẽ chỉ hiện chương hiện tại */}
           <select
             className="select select-bordered select-sm max-w-xs font-bold"
             value={displayChapterNumber}
             onChange={handleChapterSelect}
-            disabled={isOfflineMode && chapterList.length === 0} // Disable nếu offline mà ko có list
+            disabled={isOfflineMode && chapterList.length === 0}
           >
             {chapterList.length > 0 ? (
               chapterList.map((chap, index) => (
@@ -184,7 +207,6 @@ const DetailChapter = () => {
       </header>
 
       <main className="flex flex-col items-center">
-        {/* THANH THÔNG BÁO OFFLINE */}
         {isOfflineMode && (
           <div className="w-full bg-warning text-warning-content text-center text-sm py-1 font-bold flex justify-center items-center gap-2">
             <FiWifiOff />
@@ -192,36 +214,18 @@ const DetailChapter = () => {
           </div>
         )}
 
-        {/* === BREADCRUMBS (Đường dẫn điều hướng) === */}
         <div className="w-full px-4 py-2 bg-base-200/50">
           <div className="text-sm breadcrumbs flex justify-center">
             <ul>
-              {/* 1. Trang chủ */}
-              <li>
-                <Link to="/" className="hover:text-primary transition-colors text-base-content/70">
-                  Trang chủ
-                </Link>
-              </li>
-
-              {/* 2. Tên Truyện (Click để quay lại trang chi tiết) */}
+              <li><Link to="/">Trang chủ</Link></li>
               <li>
                 {typeof chapter.manga === 'object' && 'title' in chapter.manga && (
-                  <Link
-                    to={`/manga/${slug}`}
-                    className="font-semibold hover:text-primary transition-colors max-w-[150px] sm:max-w-xs truncate"
-                    title={(chapter.manga as { title: string }).title}
-                  >
+                  <Link to={`/manga/${slug}`} className="font-semibold truncate max-w-[150px]">
                     {(chapter.manga as { title: string }).title}
                   </Link>
                 )}
               </li>
-
-              {/* 3. Tên Chương hiện tại (Màu sáng hơn để nổi bật) */}
-              <li>
-                <span className="font-bold text-primary truncate max-w-[120px] sm:max-w-none">
-                  Chương {chapter.title}
-                </span>
-              </li>
+              <li><span className="font-bold text-primary">Chương {chapter.title}</span></li>
             </ul>
           </div>
         </div>
@@ -235,21 +239,28 @@ const DetailChapter = () => {
         ))}
       </main>
 
-      <footer className="p-4 pb-8">
+      <footer className="p-4 pb-20"> {/* Tăng padding bottom để không bị nút Floating che */}
         <div className="container mx-auto flex flex-col items-center gap-4">
-
           <ChapterNavigation
             mangaSlug={slug!}
             currentChapterDisplay={displayChapterNumber}
             totalChapters={totalChapters || 1}
           />
-
           <div className="flex gap-2 mt-2">
             <ShareChapterModal />
           </div>
-
         </div>
       </footer>
+
+      {/* === 3. UI FLOATING CONTROL CHO AUTO SCROLL === */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        <AutoScrollControl
+          isAutoScrolling={isAutoScrolling}
+          onTogglePlay={() => setIsAutoScrolling(!isAutoScrolling)}
+          delay={scrollDelay}
+          onDelayChange={setScrollDelay}
+        />
+      </div>
     </div>
   );
 };

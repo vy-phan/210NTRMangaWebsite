@@ -5,8 +5,21 @@ declare global {
         slug: string;
         description?: string;
         status?: 'Ongoing' | 'Completed' | 'Cancelled';
+        category?: 'Manga' | 'Manhwa';
         genres?: (string | Genre)[];
         poster?: string;
+        createdAt?: string;
+        updatedAt?: string;
+    }
+
+    interface Banner {
+        _id: string;
+        title: string;
+        bannerImg: string;
+        charImg: string;
+        link: string;
+        active: boolean;
+        priority: number;
         createdAt?: string;
         updatedAt?: string;
     }

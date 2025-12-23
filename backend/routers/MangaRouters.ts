@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteManga, getLengthManga, getManga, getMangaById, getMangaBySlug, getMangaTitleById, getRelatedMangas, postManga, updateManga } from "../controllers/MangaControllers";
+import { deleteManga, getLengthManga, getManga, getMangaByCategory, getMangaById, getMangaBySlug, getMangaTitleById, getRelatedMangas, postManga, updateManga } from "../controllers/MangaControllers";
 import { adminOnly, protectRoute } from "../middleware/auth";
 
 
@@ -10,6 +10,7 @@ router.get('/', getManga);
 router.get("/count",protectRoute, adminOnly,getLengthManga)
 router.get("/slug/:slug", getMangaBySlug);
 router.post('/related', getRelatedMangas);
+router.get('/category/:category', getMangaByCategory);
 router.get('/:id/title', getMangaTitleById);
 router.get("/:id", getMangaById);
 

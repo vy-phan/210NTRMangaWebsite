@@ -57,23 +57,23 @@ const Home = () => {
 
   return (
     <div className="pb-10">
-       {isContentHidden ? (
-          // Chế độ Ẩn: Dùng Banner cũ, KHÔNG có container
-          <section className="mb-8">
-              <Banner />
-          </section>
+      {isContentHidden ? (
+        // Chế độ Ẩn: Dùng Banner cũ, KHÔNG có container
+        <section className="mb-8">
+          <Banner />
+        </section>
       ) : (
-         <section className="container mx-auto my-8 px-4">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[420px]">
-                  <div className="hidden lg:block lg:col-span-4 h-full pt-4"> 
-                      <TrendingSide />
-                  </div>
+        <section className="container mx-auto my-8 px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[420px]">
+            <div className="hidden lg:block lg:col-span-4 h-full pt-4">
+              <TrendingSide />
+            </div>
 
-                  <div className="lg:col-span-8 w-full h-full">
-                      <HeroBanner />
-                  </div>
-              </div>
-          </section>
+            <div className="lg:col-span-8 w-full h-full">
+              <HeroBanner />
+            </div>
+          </div>
+        </section>
       )}
 
       <section className="container mx-auto px-4">
@@ -121,6 +121,26 @@ const Home = () => {
                   </div>
                 </div>
               </div>
+
+              {
+                !isContentHidden && (
+                  <div className="card bg-base-100 shadow-xl border border-base-300 overflow-hidden group relative">
+                    <figure className="relative w-full aspect-[3/4] cursor-pointer ">
+                      {/* Ảnh GIF */}
+                      <img
+                        src="https://cdn2.hentaigifz.com/57750/anime-big-tits-miyazaki-chisaki-scaled.webp"
+                        alt="Featured Content"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy" // Tải chậm để trang load nhanh hơn
+                      />
+
+                      {/* Lớp phủ gradient đen mờ bên dưới (để chèn chữ nếu cần) */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                    </figure>
+                  </div>
+                )
+              }
             </div>
           </div>
         )}

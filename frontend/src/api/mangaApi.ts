@@ -61,6 +61,20 @@ export const getLengthMangasAPI = async (): Promise<number> => {
     }
 }
 
+export const getMangaByCategoryAPI = async (category: string): Promise<Manga[]> => {
+    try {
+        const response = await apiClient.get(`/manga/category/${category}`);
+        if (response.data && response.data.success) {
+            return response.data.data;
+        } else {
+            throw new Error(response.data.message || 'Failed to fetch mangas by category');
+        }
+    } catch (error) {
+        console.error("Error fetching mangas by category:", error);
+        throw error;
+    }
+};
+
 export const getMangaTitleByIdAPI = async (id: string): Promise<{ _id: string; title: string }> => {
     try {
         const response = await apiClient.get(`/manga/${id}/title`);

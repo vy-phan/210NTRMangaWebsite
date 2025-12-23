@@ -132,6 +132,7 @@ const MangaAdmin = () => {
                 <th>Poster</th>
                 <th>Tên Truyện</th>
                 <th>Thể loại</th>
+                <th>Loại</th>
                 <th>Trạng thái</th>
                 <th className="text-center">Hành động</th>
               </tr>
@@ -203,6 +204,14 @@ const MangaAdmin = () => {
                         </div>
                       )}
                     </div>
+                  </td>
+                  <td>
+                    <span className={`badge badge-outline font-semibold ${manga.category === 'Manga'
+                        ? 'badge-info'      
+                        : 'badge-secondary'
+                      }`}>
+                      {manga.category}
+                    </span>
                   </td>
                   <td>
                     <MangaStatusBadge status={manga.status} />

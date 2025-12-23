@@ -11,6 +11,7 @@ import userRoutes from './routers/UserRouters';
 import genreRoutes from './routers/GenreRouters';
 import chapterRouter from './routers/ChapterRouters';
 import imageUploadRouter from './routers/ImageUploadRouters';
+import bannerRouter from './routers/BannerRoutes';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use('/api/genres', genreRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chapters', chapterRouter);
 app.use('/api/images', imageUploadRouter);
+app.use('/api/banners', bannerRouter);
 
 // Serve Frontend in Production
 if (process.env.NODE_ENV === 'production') {

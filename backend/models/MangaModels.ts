@@ -18,6 +18,12 @@ const mangaSchema = new mongoose.Schema({
         type: String,
         enum: ['Ongoing', 'Completed', 'Cancelled'],
     }, 
+    category: {
+        type: String,
+        enum: ['Manga', 'Manhwa'], 
+        default: 'Manga', 
+        index: true 
+    },
     genres: [
         {
             type: mongoose.Schema.Types.ObjectId,
