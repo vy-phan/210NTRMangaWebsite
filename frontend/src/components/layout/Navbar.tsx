@@ -54,10 +54,10 @@ const Navbar = () => {
                     </ul>
                 </div>
                 <Link to="/" className="btn btn-ghost p-1 h-auto min-h-0 hover:bg-transparent">
-                    <img 
+                    <img
                         // Logic đổi ảnh theo theme
-                        src={theme === 'light' ? '/logoLight.png' : '/logoNight.png'} 
-                        alt="210 NTR Manga" 
+                        src={theme === 'light' ? '/logoLight.png' : '/logoNight.png'}
+                        alt="210 NTR Manga"
                         className="h-10 md:h-14 md:pl-20 w-auto object-contain transition-all duration-300"
                     />
                 </Link>
@@ -103,6 +103,10 @@ const Navbar = () => {
                             <div className="divider my-0"></div>
                             <li><Link to="/profile">Hồ sơ</Link></li>
                             {
+                                user && (
+                                    <li><Link to="/history">Lịch sử</Link></li>
+                                )
+                            }{
                                 user.role == 'admin' && (
                                     <>
                                         <li><Link to="/admin">Quản trị</Link></li>

@@ -11,6 +11,7 @@ import SeoTags from '../components/manga/SeoTags';
 import ShareChapterModal from '../components/manga/ShareChapterModal';
 import ChapterListDownloadButton from '../components/manga/ChapterListDownloadButton';
 import RelatedMangaList from '../components/manga/RelatedMangaList';
+import { useHistoryStore } from '../store/useHistoryStore';
 
 // Component con để hiển thị skeleton loading
 const DetailMangaSkeleton = () => (
@@ -60,7 +61,7 @@ const DetailManga = () => {
   const [manga, setManga] = useState<Manga | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+ const { addToHistory } = useHistoryStore();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isLoadingChapters, setIsLoadingChapters] = useState(true);
   const [relatedMangas, setRelatedMangas] = useState<Manga[]>([]);
@@ -160,6 +161,19 @@ const DetailManga = () => {
     }
   };
 
+
+   // === 3. HÀM XỬ LÝ LƯU LỊCH SỬ ===
+  const handleReadChapter = (chapter: Chapter) => {
+    if (!manga) return;
+    const historyChapter = {
+      ...chapter,
+      number: chapter.number + 1, 
+      title: chapter.title || `${chapter.number + 1}`
+    };
+
+    addToHistory(manga, historyChapter);
+  };
+
   const isOneshot = !isLoadingChapters && chapters.length === 1;
 
   // 4. Xử lý các trạng thái UI
@@ -251,6 +265,7 @@ const DetailManga = () => {
                     <Link
                       to={`/manga/${slug}/chapter/${chapters[0].number + 1}`}
                       className="btn btn-primary btn-md"
+                      onClick={() => handleReadChapter(chapters[0])}
                     >
                       <FiBookOpen /> Đọc Oneshot
                     </Link>
@@ -264,12 +279,14 @@ const DetailManga = () => {
                           <Link
                             to={`/manga/${slug}/chapter/${firstChapter.number + 1}`}
                             className="btn btn-primary btn-md"
+                            onClick={() => handleReadChapter(firstChapter)}
                           >
                             <FiBookOpen /> Đọc từ đầu (Ch. {firstChapter.title})
                           </Link>
                           <Link
                             to={`/manga/${slug}/chapter/${latestChapter.number + 1}`}
                             className="btn btn-ghost btn-md border border-base-content/20"
+                            onClick={() => handleReadChapter(latestChapter)}
                           >
                             <FiBookmark /> Chương mới nhất (Ch. {latestChapter.title})
                           </Link>
@@ -322,6 +339,7 @@ const DetailManga = () => {
                           to={`/manga/${slug}/chapter/${chapter.number + 1}`}
                           className="font-semibold text-base-content group-hover:text-primary transition-colors truncate block"
                           title={isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
+                          onClick={() => handleReadChapter(chapter)}
                         >
                           {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
                         </Link>

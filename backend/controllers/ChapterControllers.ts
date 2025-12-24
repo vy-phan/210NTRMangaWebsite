@@ -95,6 +95,12 @@ export const createChapter = asyncHandler(async (req: Request, res: Response) =>
     }
 
     const chapter = await Chapter.create({ number, title, manga, images });
+    // CẬP NHẬT THỜI GIAN CHO MANGA
+    await Manga.findByIdAndUpdate(
+        manga,
+        { updatedAt: new Date() },
+        { new: true }
+    );
     res.status(201).json({ success: true, data: chapter });
 });
 
@@ -113,6 +119,12 @@ export const updateChapter = asyncHandler(async (req: Request, res: Response) =>
     }
 
     const updatedChapter = await Chapter.findByIdAndUpdate(id, req.body, { new: true });
+    
+    // Cập nhật lại thời gian cho Manga 
+    if (updatedChapter) {
+        await Manga.findByIdAndUpdate(updatedChapter.manga, { updatedAt: new Date() });
+    }
+
     res.status(200).json({ success: true, data: updatedChapter });
 });
 

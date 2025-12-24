@@ -114,12 +114,45 @@ export const getRelatedMangas = asyncHandler(async (req: Request, res: Response)
 });
 
 /**
- * @desc    Get all mangas
+ * @desc    Get all mangas with 2 latest chapters
  * @route   GET /api/manga
  * @access  Public
  */
 export const getManga = asyncHandler(async (req: Request, res: Response) => {
-    const mangas = await Manga.find().populate('genres').sort({ updatedAt: -1 });
+    const mangas = await Manga.aggregate([
+        // 1. Sắp xếp truyện theo thời gian cập nhật mới nhất
+        { $sort: { updatedAt: -1 } },
+
+        // 2. Lookup (Join) với bảng 'chapters' để lấy 2 chương mới nhất
+        {
+            $lookup: {
+                from: 'chapters', // Tên collection trong DB (thường là số nhiều, viết thường)
+                let: { mangaId: '$_id' }, // Biến tạm lưu ID của manga hiện tại
+                pipeline: [
+                    { 
+                        $match: { 
+                            $expr: { $eq: ['$manga', '$$mangaId'] } // Tìm chapter có manga id trùng khớp
+                        } 
+                    },
+                    { $sort: { number: -1 } }, // Sắp xếp chapter giảm dần (số lớn nhất lên đầu)
+                    { $limit: 2 }, // Chỉ lấy 2 chapter đầu tiên
+                    { $project: { title: 1, number: 1, _id: 1, createdAt: 1 } } // Chỉ lấy các trường cần thiết cho nhẹ
+                ],
+                as: 'latestChapters' // Tên trường mới chứa mảng 2 chapter này
+            }
+        },
+
+        // 3. Lookup (Join) với bảng 'genres' (vì bạn dùng populate genres ở code cũ)
+        {
+            $lookup: {
+                from: 'genres',
+                localField: 'genres',
+                foreignField: '_id',
+                as: 'genres'
+            }
+        }
+    ]);
+
     res.status(200).json({ success: true, data: mangas });
 });
 

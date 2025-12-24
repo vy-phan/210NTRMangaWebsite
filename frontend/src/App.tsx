@@ -15,6 +15,8 @@ const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
 const Search = lazy(() => import('./pages/Search'));
 const Genre = lazy(() => import('./pages/Genre'));
+const CategoryPage = lazy(() => import('./pages/CategoryPage')) ;
+const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const DetailManga = lazy(() => import('./pages/DetailManga'));
 const DetailChapter = lazy(() => import('./pages/DetailChapter'));
 const DetailGenre = lazy(() => import('./pages/DetailGenre'));
@@ -26,14 +28,13 @@ const MangaAdmin = lazy(() => import('./pages/admin/Manga'));
 const GenreAdmin = lazy(() => import('./pages/admin/Genre'));
 const ChapterAdmin = lazy(() => import('./pages/admin/Chapter'));
 const LayoutAdmin = lazy(() => import('./components/layout/LayoutAdmin'));
+const BannerAdmin = lazy(() => import('./pages/admin/Banner'));
 
 // Guards (Giữ nguyên import thường hoặc lazy đều được, nhưng import thường an toàn hơn cho logic)
 import AdminRouteGuard from './components/auth/AdminRouteGuard';
 import AuthRouteGuard from './components/auth/AuthRouteGuard';
 import { useNetworkStatus } from './hook/useNetworkStatus';
 import { FiWifiOff } from 'react-icons/fi';
-import CategoryPage from './pages/CategoryPage';
-import BannerAdmin from './pages/admin/Banner';
 
 
 const LoadingFallback = () => (
@@ -75,6 +76,7 @@ function App() {
               <Route path="/genre/:slug" element={<DetailGenre />} />
               <Route path="/category/:categoryName" element={<CategoryPage />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/history" element={<HistoryPage />} />
 
               {/* Protected User Routes */}
               <Route element={<AuthRouteGuard />}>

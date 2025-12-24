@@ -1,4 +1,15 @@
 declare global {
+    interface HistoryItem {
+        mangaId: string;
+        mangaTitle: string;
+        mangaSlug: string;
+        mangaPoster: string;
+        chapterId: string;
+        chapterNumber: number;
+        chapterTitle: string;
+        readAt: number;
+    }
+
     interface Manga {
         _id: string;
         title: string;
@@ -10,6 +21,7 @@ declare global {
         poster?: string;
         createdAt?: string;
         updatedAt?: string;
+        latestChapters?: ChapterPreview[];
     }
 
     interface Banner {
@@ -54,6 +66,13 @@ declare global {
     interface ChapterImage {
         url: string;
         pageNumber: number;
+    }
+
+    interface ChapterPreview {
+        _id: string;
+        number: number;
+        title: string;
+        createdAt?: string;
     }
 
     interface Chapter {
