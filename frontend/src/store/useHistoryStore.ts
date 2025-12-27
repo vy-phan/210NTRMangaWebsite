@@ -9,6 +9,7 @@ interface HistoryState {
     addToHistory: (manga: any, chapter: any) => void;
     removeFromHistory: (mangaId: string) => void;
     clearHistory: () => void;
+    updateHistoryChapter: (mangaId: string, chapter: any) => void;
 }
 
 export const useHistoryStore = create<HistoryState>()(
@@ -67,6 +68,26 @@ export const useHistoryStore = create<HistoryState>()(
              */
             clearHistory: () => {
                 set({ history: [] });
+            },
+
+            updateHistoryChapter: (mangaId, chapter) => {
+                const currentHistory = get().history;
+                const existingItem = currentHistory.find(item => item.mangaId === mangaId);
+
+                // Chỉ thực hiện nếu truyện này ĐÃ CÓ trong lịch sử
+                if (existingItem) {
+                    const updatedItem = {
+                        ...existingItem, // Giữ nguyên Poster, MangaTitle, Slug cũ
+                        chapterId: chapter._id,
+                        chapterNumber: chapter.number, // Hoặc chapter.number + 1 tùy logic của bạn
+                        chapterTitle: chapter.title || chapter.number.toString(),
+                        readAt: Date.now(),
+                    };
+
+                    // Đưa lên đầu danh sách
+                    const otherItems = currentHistory.filter(item => item.mangaId !== mangaId);
+                    set({ history: [updatedItem, ...otherItems] });
+                }
             },
         }),
         {

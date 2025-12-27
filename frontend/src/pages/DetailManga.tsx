@@ -61,7 +61,7 @@ const DetailManga = () => {
   const [manga, setManga] = useState<Manga | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
- const { addToHistory } = useHistoryStore();
+  const { addToHistory, history } = useHistoryStore();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isLoadingChapters, setIsLoadingChapters] = useState(true);
   const [relatedMangas, setRelatedMangas] = useState<Manga[]>([]);
@@ -103,7 +103,7 @@ const DetailManga = () => {
           // 2. Fetch Related Mangas (MỚI THÊM)
           // Lấy danh sách ID của các thể loại
           const genreIds = data.genres?.map((g: any) => typeof g === 'string' ? g : g._id) || [];
-          
+
 
           if (genreIds.length > 0) {
             getRelatedMangasAPI(data._id, genreIds)
@@ -161,13 +161,17 @@ const DetailManga = () => {
     }
   };
 
+  const checkIsRead = (chapterNum: number) => {
+    if (!manga) return false;
+    return history.some(h => h.mangaId === manga._id && h.chapterNumber === chapterNum);
+  };
 
-   // === 3. HÀM XỬ LÝ LƯU LỊCH SỬ ===
+  // === 3. HÀM XỬ LÝ LƯU LỊCH SỬ ===
   const handleReadChapter = (chapter: Chapter) => {
     if (!manga) return;
     const historyChapter = {
       ...chapter,
-      number: chapter.number + 1, 
+      number: chapter.number + 1,
       title: chapter.title || `${chapter.number + 1}`
     };
 
@@ -328,41 +332,58 @@ const DetailManga = () => {
                 </div>
               ) : chapters.length > 0 ? (
                 <ul className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-                  {chapters.map(chapter => (
-                    <li
-                      key={chapter._id}
-                      className="flex items-center justify-between p-3 rounded-lg hover:bg-base-200 transition-colors group border border-transparent hover:border-base-300"
-                    >
-                      {/* === KHU VỰC TRÁI: TEXT (Title + Time Mobile) === */}
-                      <div className="flex flex-col flex-grow min-w-0 pr-3">
-                        <Link
-                          to={`/manga/${slug}/chapter/${chapter.number + 1}`}
-                          className="font-semibold text-base-content group-hover:text-primary transition-colors truncate block"
-                          title={isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
-                          onClick={() => handleReadChapter(chapter)}
-                        >
-                          {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
-                        </Link>
+                  {chapters.map(chapter => {
+                    // Tính toán trạng thái đã đọc
+                    const displayNum = chapter.number + 1;
+                    const isRead = checkIsRead(displayNum);
 
-                        {/* Thời gian (Chỉ hiện trên Mobile - Nằm dưới tiêu đề) */}
-                        <span className="text-xs text-base-content/50 mt-0.5 sm:hidden">
-                          {formatTimeAgo(chapter.createdAt)}
-                        </span>
-                      </div>
+                    return (
+                      <li
+                        key={chapter._id}
+                        className={`
+                              flex items-center justify-between p-3 rounded-lg transition-colors group border 
+                              ${isRead
+                            ? 'bg-base-200/50 border-transparent' // Đã đọc: Nền tối hơn chút, không viền
+                            : 'hover:bg-base-200 border-transparent hover:border-base-300' // Chưa đọc: Hiệu ứng hover bình thường
+                          }
+                            `}
+                      >
+                        {/* === KHU VỰC TRÁI === */}
+                        <div className="flex flex-col flex-grow min-w-0 pr-3">
+                          <Link
+                            to={`/manga/${slug}/chapter/${displayNum}`}
+                            // Logic CSS: Nếu đã đọc thì màu xám nhạt (content/50), chưa đọc thì đậm (semibold)
+                            className={`
+                              transition-colors truncate block
+                              ${isRead
+                                ? 'text-base-content/50 font-normal decoration-slice'
+                                : 'font-semibold text-base-content group-hover:text-primary'
+                              }
+                                    `}
+                            title={isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
+                            onClick={() => handleReadChapter(chapter)}
+                          >
+                            {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
+                          </Link>
 
-                      {/* === KHU VỰC PHẢI: ACTIONS (Time PC + Download) === */}
-                      <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs text-base-content/50 mt-0.5 sm:hidden">
+                            {formatTimeAgo(chapter.createdAt)}
+                          </span>
+                        </div>
 
-                        <span className="text-sm text-base-content/60 hidden sm:inline-block">
-                          {formatTimeAgo(chapter.createdAt)}
-                        </span>
-                        <ChapterListDownloadButton
-                          slug={slug!}
-                          chapter={chapter}
-                        />
-                      </div>
-                    </li>
-                  ))}
+                        {/* === KHU VỰC PHẢI === */}
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className={`text-sm hidden sm:inline-block ${isRead ? 'text-base-content/30' : 'text-base-content/60'}`}>
+                            {formatTimeAgo(chapter.createdAt)}
+                          </span>
+                          <ChapterListDownloadButton
+                            slug={slug!}
+                            chapter={chapter}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 // Hiển thị khi không có chương nào

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiCheck, FiUser } from 'react-icons/fi';
 
-const TOTAL_AVATARS = 20;
+const TOTAL_AVATARS = 25;
 
 interface AvatarSelectionModalProps {
     modalRef: React.RefObject<HTMLDialogElement>;

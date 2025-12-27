@@ -9,6 +9,7 @@ import ChapterImage from '../components/manga/ChapterImage';
 import ShareChapterModal from '../components/manga/ShareChapterModal';
 import { getChapterOffline } from '../utils/offlineDB';
 import AutoScrollControl from '../components/manga/AutoScrollControl';
+import { useHistoryStore } from '../store/useHistoryStore';
 
 // Component Skeleton
 const ChapterSkeleton = () => (
@@ -26,6 +27,7 @@ const DetailChapter = () => {
   const [currentMangaId, setCurrentMangaId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const { addToHistory, updateHistoryChapter } = useHistoryStore();
 
   // === 1. STATE CHO AUTO SCROLL (PAGE DOWN MODE) ===
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -113,6 +115,27 @@ const DetailChapter = () => {
         if (currentChapterData.manga && typeof currentChapterData.manga === 'object' && '_id' in currentChapterData.manga) {
           const mangaId = (currentChapterData.manga as { _id: string })._id;
           if (mangaId !== currentMangaId) setCurrentMangaId(mangaId);
+        }
+         const chapterToSave = {
+            ...currentChapterData,
+            number: currentChapterData.number + 1, // Ví dụ: database lưu 0, hiển thị là 1
+            title: currentChapterData.title || `${currentChapterData.number + 1}`
+        };
+
+        const mangaInfo = currentChapterData.manga;
+
+        // KIỂM TRA: API có trả về object Manga đầy đủ (có poster) không?
+        if (mangaInfo && typeof mangaInfo === 'object' && 'poster' in mangaInfo) {
+            // Case 1: Có full thông tin (thường là lần load đầu tiên hoặc API trả full)
+            // -> Dùng hàm Add cũ để cập nhật mới toàn bộ
+            addToHistory(mangaInfo, chapterToSave);
+        } else {
+            // Case 2: Chỉ có ID (khi chuyển chap) hoặc thiếu poster
+            // -> Dùng hàm Update mới, chỉ thay đổi số chương
+            const mId = typeof mangaInfo === 'string' ? mangaInfo : (mangaInfo as any)._id;
+            if (mId) {
+                updateHistoryChapter(mId, chapterToSave);
+            }
         }
       } catch (error) {
         console.warn("API Error, attempting offline load...");
