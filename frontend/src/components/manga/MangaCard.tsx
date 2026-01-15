@@ -58,7 +58,7 @@ const MangaCard = ({ manga }: MangaCardProps) => {
                   to={`/manga/${manga.slug}/chapter/${chap.number + 1}`}
                   className="font-semibold hover:text-primary bg-base-200 px-2 py-0.5 rounded-md hover:bg-base-300 transition-colors"
                 >
-                  {chap.number === 0 ? `Oneshot` : `Chương ${chap.title}`}
+                  {manga.latestChapters!.length > 1 ? `Chương ${chap.title}` : `Oneshot`}
                 </Link>
                 <span className="text-[10px] text-base-content/60 italic">
                   {formatTimeAgo(chap.createdAt)}

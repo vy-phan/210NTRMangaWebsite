@@ -28,7 +28,7 @@ const HistoryPage = () => {
     return (
         <div className="min-h-screen bg-base-200/50">
             <div className="container mx-auto p-4 md:p-8">
-                
+
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 pb-4 border-b border-base-300 gap-4">
                     <div>
@@ -100,7 +100,7 @@ const HistoryPage = () => {
                                         >
                                             {item.mangaTitle}
                                         </Link>
-                                        
+
                                         <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-base-content/50">
                                             <FiClock />
                                             <span>{formatTimeAgo(new Date(item.readAt).toISOString())}</span>
@@ -115,7 +115,12 @@ const HistoryPage = () => {
                                         >
                                             <FiPlayCircle className="w-4 h-4" />
                                             <span className="truncate max-w-[120px]">
-                                                {item.chapterNumber === 1 ? `Oneshot` : `Tiếp: Chương ${item.chapterNumber}`}
+                                                {/* Logic: Nếu title chứa bất kỳ chữ cái nào (a-z, A-Z) -> Hiển thị gốc */}
+                                                {/* Nếu không có chữ cái (chỉ có số, dấu chấm, dấu gạch ngang) -> Thêm "Chương" */}
+                                                {/[a-zA-Z]/.test(item.chapterTitle)
+                                                    ? item.chapterTitle
+                                                    : `Chương ${item.chapterTitle}`
+                                                }
                                             </span>
                                         </Link>
 

@@ -8,14 +8,14 @@ import Footer from './components/layout/Footer';
 import NotFound from './pages/NotFound';
 
 // 2. Chuyển đổi các trang (Pages) sang Lazy Load
-const OfflinePage = lazy(() => import('./pages/OfflinePage')); 
+const OfflinePage = lazy(() => import('./pages/OfflinePage'));
 
 // User Pages
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
 const Search = lazy(() => import('./pages/Search'));
 const Genre = lazy(() => import('./pages/Genre'));
-const CategoryPage = lazy(() => import('./pages/CategoryPage')) ;
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const DetailManga = lazy(() => import('./pages/DetailManga'));
 const DetailChapter = lazy(() => import('./pages/DetailChapter'));
@@ -55,12 +55,12 @@ function App() {
 
         <Navbar />
 
-         {!isOnline && (
-            <div className="bg-error text-error-content px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-2 sticky top-0 z-[100]">
-                <FiWifiOff />
-                Bạn đang Offline. Một số hình ảnh hoặc tính năng có thể không hoạt động.
-                <a href="/offline" className="underline hover:text-white ml-2">Đến Tủ sách Offline</a>
-            </div>
+        {!isOnline && (
+          <div className="bg-error text-error-content px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-2 sticky top-0 z-[100]">
+            <FiWifiOff />
+            Bạn đang Offline. Một số hình ảnh hoặc tính năng có thể không hoạt động.
+            <a href="/offline" className="underline hover:text-white ml-2">Đến Tủ sách Offline</a>
+          </div>
         )}
 
         <main className="flex-grow">
