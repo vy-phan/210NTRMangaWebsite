@@ -12,10 +12,14 @@ const MangaAdmin = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState<'Manga' | 'Manhwa' | ''>('');
+  const [filterStatus, setFilterStatus] = useState<'Ongoing' | 'Completed' | 'Cancelled' | ''>('');
+
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingManga, setEditingManga] = useState<Manga | null>(null);
+
 
   useEffect(() => {
     const fetchMangas = async () => {
@@ -34,14 +38,29 @@ const MangaAdmin = () => {
   }, []);
 
   const filteredManga = useMemo(() => {
-    if (!searchTerm) {
-      return mangas; // Trả về danh sách gốc nếu không có từ khóa tìm kiếm
+    let list = mangas;
+
+    // 1. Lọc theo từ khóa (giữ nguyên logic cũ)
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(manga =>
+        manga.title.toLowerCase().includes(q) ||
+        manga.slug.toLowerCase().includes(q)
+      );
     }
-    return mangas.filter(manga =>
-      manga.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      manga.slug.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [mangas, searchTerm]);
+
+    // 2. Lọc theo Category (THÊM MỚI)
+    if (filterCategory) {
+      list = list.filter(manga => manga.category === filterCategory);
+    }
+
+    // 3. Lọc theo Status (THÊM MỚI)
+    if (filterStatus) {
+      list = list.filter(manga => manga.status === filterStatus);
+    }
+
+    return list;
+  }, [mangas, searchTerm, filterCategory, filterStatus]);
 
   const handleOpenAddModal = () => {
     setEditingManga(null);
@@ -96,12 +115,43 @@ const MangaAdmin = () => {
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
-      <header className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <header className="flex flex-col md:flex-row justify-between md:items-end gap-4">
         <div>
           <h1 className="text-3xl font-bold">Quản lý Truyện</h1>
-          <p className="text-base-content/70 mt-1">Tổng cộng: {mangas.length} truyện.</p>
+          <p className="text-base-content/70 mt-1">Tổng cộng: {filteredManga.length} / {mangas.length} truyện.</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenAddModal}><FiPlus /> Thêm Truyện Mới</button>
+
+        {/* === CỤM NÚT LỌC VÀ THÊM MỚI (SỬA ĐỔI) === */}
+        <div className="flex flex-wrap items-center gap-2">
+          
+          {/* Lọc Category */}
+          <select 
+            className="select select-bordered select-md"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value as any)}
+          >
+            <option value="">Tất cả Loại</option>
+            <option value="Manga">🇯🇵 Manga</option>
+            <option value="Manhwa">🇰🇷 Manhwa</option>
+          </select>
+
+          {/* Lọc Status */}
+          <select 
+            className="select select-bordered select-md"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
+          >
+            <option value="">Tất cả Trạng thái</option>
+            <option value="Ongoing">Đang tiến hành</option>
+            <option value="Completed">Hoàn thành</option>
+            <option value="Cancelled">Đã hủy</option>
+          </select>
+
+          {/* Nút Thêm Mới (Giữ nguyên nhưng đổi size cho đều) */}
+          <button className="btn btn-primary btn-md" onClick={handleOpenAddModal}>
+            <FiPlus /> Thêm Truyện
+          </button>
+        </div>
       </header>
 
 
@@ -207,8 +257,8 @@ const MangaAdmin = () => {
                   </td>
                   <td>
                     <span className={`badge badge-outline font-semibold ${manga.category === 'Manga'
-                        ? 'badge-info'      
-                        : 'badge-secondary'
+                      ? 'badge-info'
+                      : 'badge-secondary'
                       }`}>
                       {manga.category}
                     </span>
