@@ -23,7 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-
+./dev-dist
+/dev-dist
 .env
 .env.local
 .env.*.local

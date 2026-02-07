@@ -178,6 +178,12 @@ const DetailManga = () => {
     addToHistory(manga, historyChapter);
   };
 
+  const isNewChapter = (createdAt?: string | Date) => {
+    if (!createdAt) return false;
+    const diff = new Date().getTime() - new Date(createdAt).getTime();
+    return diff > 0 && diff < 24 * 60 * 60 * 1000; // Dưới 24h và không phải tương lai
+  };
+
   const isOneshot = !isLoadingChapters && chapters.length === 1;
 
   // 4. Xử lý các trạng thái UI
@@ -349,24 +355,28 @@ const DetailManga = () => {
                             `}
                       >
                         {/* === KHU VỰC TRÁI === */}
-                        <div className="flex flex-col flex-grow min-w-0 pr-3">
+                        <div className="flex flex-row items-center gap-2 flex-grow min-w-0 pr-3">
                           <Link
                             to={`/manga/${slug}/chapter/${displayNum}`}
                             // Logic CSS: Nếu đã đọc thì màu xám nhạt (content/50), chưa đọc thì đậm (semibold)
                             className={`
-                              transition-colors truncate block
-                              ${isRead
+                                transition-colors truncate
+                                ${isRead
                                 ? 'text-base-content/50 font-normal decoration-slice'
                                 : 'font-semibold text-base-content group-hover:text-primary'
                               }
-                                    `}
+                                      `}
                             title={isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
                             onClick={() => handleReadChapter(chapter)}
                           >
                             {isOneshot ? 'Oneshot' : `Chương ${chapter.title}`}
                           </Link>
 
-                          <span className="text-xs text-base-content/50 mt-0.5 sm:hidden">
+                          {isNewChapter(chapter.createdAt) && (
+                            <span className="bg-red-500 px-1.5 py-1 rounded-full text-[10px] font-bold text-white">Mới</span>
+                          )}
+
+                          <span className="text-[10px] text-base-content/40 mt-0.5 sm:hidden whitespace-nowrap">
                             {formatTimeAgo(chapter.createdAt)}
                           </span>
                         </div>

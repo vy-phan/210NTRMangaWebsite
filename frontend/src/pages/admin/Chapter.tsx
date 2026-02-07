@@ -13,6 +13,7 @@ const ChapterAdmin = () => {
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [currentMangaTitle, setCurrentMangaTitle] = useState<string>('Đang tải...');
     const [isLoading, setIsLoading] = useState(true);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -105,7 +106,17 @@ const ChapterAdmin = () => {
 
                     <Link to={`/admin/mangas`} className="text-sm link link-hover">← Quay lại danh sách truyện</Link>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {/* Nút Sắp xếp */}
+                    <select
+                        className="select select-bordered"
+                        value={sortOrder}
+                        onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                    >
+                        <option value="asc">Sắp xếp: Từ đầu</option>
+                        <option value="desc">Sắp xếp: Mới nhất</option>
+                    </select>
+
                     {/* Nút quản lý ảnh */}
                     <button className="btn btn-accent" onClick={() => setIsImageLibraryOpen(true)}>
                         <FiImage /> Thư Viện Ảnh
@@ -132,46 +143,48 @@ const ChapterAdmin = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {chapters.map(chapter => (
-                                <tr key={chapter._id} className='hover'>
-                                    <td className="font-bold">{chapter.number}</td>
-                                    <td>{chapter.title}</td>
-                                    <td>{chapter.images.length}</td>
-                                    <td>
-                                        <span className="md:hidden">
-                                            {new Date(chapter.updatedAt!).toLocaleDateString('vi-VN')}
-                                        </span>
-                                        <span className="hidden md:inline">
-                                            {formatSmartTime(chapter.updatedAt!)}
-                                        </span>
-                                    </td>
-                                    <td className="w-38 text-center">
-                                        <div className="flex justify-center items-center gap-1">
-                                            {/* Nút Sửa */}
-                                            <div className="tooltip" data-tip="Sửa chương">
-                                                <button
-                                                    className="btn btn-ghost btn-lg btn-circle"
-                                                    onClick={() => handleOpenEditModal(chapter)}
-                                                >
-                                                    <FiEdit className="text-info" />
-                                                </button>
+                            {[...chapters]
+                                .sort((a, b) => sortOrder === 'asc' ? a.number - b.number : b.number - a.number)
+                                .map(chapter => (
+                                    <tr key={chapter._id} className='hover'>
+                                        <td className="font-bold">{chapter.number}</td>
+                                        <td>{chapter.title}</td>
+                                        <td>{chapter.images.length}</td>
+                                        <td>
+                                            <span className="md:hidden">
+                                                {new Date(chapter.updatedAt!).toLocaleDateString('vi-VN')}
+                                            </span>
+                                            <span className="hidden md:inline">
+                                                {formatSmartTime(chapter.updatedAt!)}
+                                            </span>
+                                        </td>
+                                        <td className="w-38 text-center">
+                                            <div className="flex justify-center items-center gap-1">
+                                                {/* Nút Sửa */}
+                                                <div className="tooltip" data-tip="Sửa chương">
+                                                    <button
+                                                        className="btn btn-ghost btn-lg btn-circle"
+                                                        onClick={() => handleOpenEditModal(chapter)}
+                                                    >
+                                                        <FiEdit className="text-info" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Nút Xóa */}
+                                                <div className="tooltip" data-tip="Xóa chương">
+                                                    <button
+                                                        className="btn btn-ghost btn-lg btn-circle"
+                                                        onClick={() => handleDeleteChapter(chapter._id)}
+                                                    >
+                                                        <FiTrash2 className="text-error" />
+                                                    </button>
+                                                </div>
+
                                             </div>
 
-                                            {/* Nút Xóa */}
-                                            <div className="tooltip" data-tip="Xóa chương">
-                                                <button
-                                                    className="btn btn-ghost btn-lg btn-circle"
-                                                    onClick={() => handleDeleteChapter(chapter._id)}
-                                                >
-                                                    <FiTrash2 className="text-error" />
-                                                </button>
-                                            </div>
-
-                                        </div>
-
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>
