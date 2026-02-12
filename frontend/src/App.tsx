@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AuthListener from './components/auth/AuthListener';
@@ -34,7 +34,7 @@ const BannerAdmin = lazy(() => import('./pages/admin/Banner'));
 import AdminRouteGuard from './components/auth/AdminRouteGuard';
 import AuthRouteGuard from './components/auth/AuthRouteGuard';
 import { useNetworkStatus } from './hook/useNetworkStatus';
-import { FiWifiOff } from 'react-icons/fi';
+import { FiWifiOff, FiX } from 'react-icons/fi';
 
 
 const LoadingFallback = () => (
@@ -44,8 +44,16 @@ const LoadingFallback = () => (
   </div>
 );
 
-function App() {
+const App = () => {
   const isOnline = useNetworkStatus();
+  const [showOfflineBanner, setShowOfflineBanner] = useState(true);
+
+  // Khi mạng có lại thì reset banner để lần sau mất mạng nó lại hiện
+  useEffect(() => {
+    if (isOnline) {
+      setShowOfflineBanner(true);
+    }
+  }, [isOnline]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -55,11 +63,19 @@ function App() {
 
         <Navbar />
 
-        {!isOnline && (
-          <div className="bg-error text-error-content px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-2 sticky top-0 z-[100]">
+        {!isOnline && showOfflineBanner && (
+          <div className="bg-error text-error-content px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-2 sticky top-0 z-[100] transition-all">
             <FiWifiOff />
-            Bạn đang Offline. Một số hình ảnh hoặc tính năng có thể không hoạt động.
-            <a href="/offline" className="underline hover:text-white ml-2">Đến Tủ sách Offline</a>
+            <span className="flex-1">
+              Bạn đang Offline. Một số hình ảnh hoặc tính năng có thể không hoạt động.
+              <a href="/offline" className="underline hover:text-white ml-2">Đến Tủ sách Offline</a>
+            </span>
+            <button
+              onClick={() => setShowOfflineBanner(false)}
+              className="btn btn-ghost btn-xs btn-circle text-current hover:bg-black/10"
+            >
+              <FiX className="text-lg" />
+            </button>
           </div>
         )}
 

@@ -11,6 +11,7 @@ import SeoTags from '../components/manga/SeoTags';
 import ShareChapterModal from '../components/manga/ShareChapterModal';
 import ChapterListDownloadButton from '../components/manga/ChapterListDownloadButton';
 import RelatedMangaList from '../components/manga/RelatedMangaList';
+import BulkDownloadButton from '../components/manga/BulkDownloadButton';
 import { useHistoryStore } from '../store/useHistoryStore';
 
 // Component con để hiển thị skeleton loading
@@ -311,6 +312,11 @@ const DetailManga = () => {
                 )}
 
                 <ShareChapterModal />
+
+                {/* Nút tải nhiều chương (Mobile & Desktop) */}
+                {chapters.length > 0 && (
+                  <BulkDownloadButton slug={slug!} chapters={chapters} />
+                )}
               </div>
 
             </div>

@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    FiWifiOff, FiBookOpen, FiTrash2, FiClock, FiAlertCircle,
+    FiWifiOff, FiTrash2, FiAlertCircle,
     FiDatabase, FiImage, FiInfo, FiHardDrive, FiShield, FiRefreshCw
 } from 'react-icons/fi';
 import { initDB, deleteChapterOffline } from '../utils/offlineDB';
+import OfflineChapterList, { type OfflineChapter } from '../components/manga/OfflineChapterList';
 
-interface OfflineChapter {
-    slug: string;
-    chapterIndex: number;
-    title: string;
-    mangaTitle: string;
-    images: any[];
-    createdAt: number;
-}
+
 
 interface StorageInfo {
     usage: number;
@@ -39,7 +33,7 @@ const OfflinePage = () => {
     const MAX_IMAGE_LIMIT = 5000;
 
     const handleClearAll = async () => {
-        if (!window.confirm("CẢNH BÁO: Hành động này sẽ xóa toàn bộ truyện đã tải và đưa ứng dụng về trạng thái ban đầu. Bạn có chắc không?")) return;
+        if (!window.confirm("Hành động này sẽ xóa toàn bộ truyện đã tải và đưa ứng dụng về trạng thái ban đầu. Bạn có chắc không?")) return;
 
         setIsLoading(true);
         try {
@@ -105,6 +99,25 @@ const OfflinePage = () => {
             fetchData();
         } catch (error) {
             alert("Không thể xóa.");
+        }
+    };
+
+    const handleDeleteManga = async (slug: string, mangaTitle: string) => {
+        if (!window.confirm(`Bạn có chắc muốn xóa TẤT CẢ chương đã tải của truyện "${mangaTitle}"?`)) return;
+
+        // Lấy danh sách chương của manga này
+        const chaptersToDelete = savedChapters.filter(c => c.slug === slug);
+
+        setIsLoading(true);
+        try {
+            for (const chap of chaptersToDelete) {
+                await deleteChapterOffline(chap.slug, chap.chapterIndex);
+            }
+            fetchData();
+        } catch (error) {
+            console.error("Lỗi xóa truyện:", error);
+            alert("Có lỗi xảy ra khi xóa truyện.");
+            setIsLoading(false);
         }
     };
 
@@ -184,7 +197,7 @@ const OfflinePage = () => {
                             </div>
                             <progress
                                 className={`progress w-full h-3 transition-all duration-500 ${usagePercent > 90 ? 'progress-error' :
-                                        usagePercent > 60 ? 'progress-warning' : 'progress-success'
+                                    usagePercent > 60 ? 'progress-warning' : 'progress-success'
                                     }`}
                                 value={usagePercent}
                                 max="100"
@@ -235,26 +248,11 @@ const OfflinePage = () => {
                         <Link to="/" className="btn btn-primary btn-wide mx-auto">Về trang chủ</Link>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-3">
-                        {savedChapters.map((chap) => (
-                            <div key={`${chap.slug}-${chap.chapterIndex}`} className="group bg-base-100 rounded-xl shadow-sm hover:shadow-md transition-all p-4 border border-base-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <div className="flex-grow min-w-0">
-                                    <h3 className="font-bold text-lg truncate text-base-content group-hover:text-primary transition-colors" title={chap.mangaTitle}>
-                                        {chap.mangaTitle}
-                                    </h3>
-                                    <div className="flex flex-wrap items-center gap-3 text-sm mt-1">
-                                        <span className="badge badge-neutral font-semibold">Chương {chap.title}</span>
-                                        <span className="flex items-center gap-1 text-base-content/60 text-xs"><FiImage /> {chap.images?.length || 0} trang</span>
-                                        <span className="flex items-center gap-1 text-base-content/60 text-xs"><FiClock /> {new Date(chap.createdAt).toLocaleDateString('vi-VN')}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                    <Link to={`/manga/${chap.slug}/chapter/${chap.chapterIndex + 1}`} className="btn btn-primary btn-sm flex-grow sm:flex-grow-0 gap-2"><FiBookOpen /> Đọc</Link>
-                                    <button onClick={() => handleDelete(chap.slug, chap.chapterIndex, chap.mangaTitle, chap.title)} className="btn btn-ghost btn-sm text-error hover:bg-error/10 tooltip tooltip-left" data-tip="Xóa bản lưu"><FiTrash2 className="w-5 h-5" /></button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <OfflineChapterList
+                        chapters={savedChapters}
+                        onDelete={handleDelete}
+                        onDeleteManga={handleDeleteManga}
+                    />
                 )}
             </div>
         </div>

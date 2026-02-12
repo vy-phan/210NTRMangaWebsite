@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 const bannerItems = [
     { id: 'item1', src: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/2819/panorama/processed-6b55b112fb24d5ce904de85a31ce1efb.jpg' },
     { id: 'item2', src: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/3374/panorama/processed-2f920c4a8796afd0b189b3bcbc5bed69.jpg' },
-    { id: 'item3', src: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/483/panorama/processed-b20393ca23ebead88cb4ab628c750c6f.jpg' },
+    { id: 'item3', src: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/673/panorama/processed-2ccf549fa890f878ad8da26661fdcca6.jpg' },
     { id: 'item4', src: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/1528/panorama/processed-4bee00dbb2134cd6ae288182ef9edc9f.jpg' },
 ];
 

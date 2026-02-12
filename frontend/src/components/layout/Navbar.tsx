@@ -39,6 +39,7 @@ const Navbar = () => {
         <>
             <li><NavLink to="/search">Tìm kiếm</NavLink></li>
             <li><NavLink to="/genre">Thể Loại</NavLink></li>
+            <li><NavLink to="/offline">Offline</NavLink></li>
         </>
     );
 
