@@ -1,5 +1,6 @@
 import { CronJob } from 'cron';
 import https from 'https';
+import http from 'http';
 
 // Chạy mỗi 14 phút từ 8:00 sáng đến 18:00 (6:00 chiều) theo giờ Việt Nam
 // Cron expression: */14 (phút 0, 14, 28, 42...), 8-18 (giờ 8 đến 18)
@@ -13,7 +14,9 @@ const ping = (url: string) => {
 
     console.log(`[CRON] Pinging ${url}...`);
 
-    https.get(url, (res) => {
+    const client = url.startsWith('http://') ? http : https;
+
+    client.get(url, (res) => {
         if (res.statusCode === 200) {
             console.log('[CRON] Keep-alive ping OK');
         } else {
@@ -25,18 +28,22 @@ const ping = (url: string) => {
 };
 
 export const startKeepAliveJob = () => {
-    const API_URL = process.env.PORT;
-    const timeZone = 'Asia/Ho_Chi_Minh';
+    // Ưu tiên sử dụng RENDER_EXTERNAL_URL (biến môi trường tự động của Render)
+    let API_URL = process.env.RENDER_EXTERNAL_URL;
 
+    // Nếu không có RENDER_EXTERNAL_URL (ví dụ chạy local), fallback về localhost
     if (!API_URL) {
-        console.warn('[CRON] PORT is not set. Cron job will not ping.');
-        return;
+        const PORT = process.env.PORT || 7000;
+        API_URL = `http://localhost:${PORT}`;
+        console.log('[CRON] RENDER_EXTERNAL_URL not found, using localhost fallback.');
     }
+
+    const timeZone = 'Asia/Ho_Chi_Minh';
 
     const job = new CronJob(
         SCHEDULE,
         function () {
-            ping(API_URL);
+            ping(API_URL!);
         },
         null,
         true, // start automatically
