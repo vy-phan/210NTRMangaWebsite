@@ -40,6 +40,7 @@ const Navbar = () => {
             <li><NavLink to="/search">Tìm kiếm</NavLink></li>
             <li><NavLink to="/genre">Thể Loại</NavLink></li>
             <li><NavLink to="/offline">Offline</NavLink></li>
+            <li><NavLink to="/history">Lịch sử</NavLink></li>
         </>
     );
 
@@ -104,10 +105,6 @@ const Navbar = () => {
                             <div className="divider my-0"></div>
                             <li><Link to="/profile">Hồ sơ</Link></li>
                             {
-                                user && (
-                                    <li><Link to="/history">Lịch sử</Link></li>
-                                )
-                            }{
                                 user.role == 'admin' && (
                                     <>
                                         <li><Link to="/admin">Quản trị</Link></li>

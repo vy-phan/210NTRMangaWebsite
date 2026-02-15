@@ -12,6 +12,7 @@ import genreRoutes from './routers/GenreRouters';
 import chapterRouter from './routers/ChapterRouters';
 import imageUploadRouter from './routers/ImageUploadRouters';
 import bannerRouter from './routers/BannerRoutes';
+import { startKeepAliveJob } from './utils/cronJob';
 
 dotenv.config();
 
@@ -40,7 +41,7 @@ app.use('/api/banners', bannerRouter);
 // Serve Frontend in Production
 if (process.env.NODE_ENV === 'production') {
   const frontendDistPath = path.resolve(__dirname, '..', 'frontend', 'dist');
-  
+
   // Phục vụ các file tĩnh trước
   app.use(express.static(frontendDistPath));
 
@@ -71,6 +72,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Khởi động Cron Job giữ server hoạt động (Render Keep-alive)
+    startKeepAliveJob();
     app.listen(PORT, () => {
       console.log(`Server is running at http://localhost:${PORT}`);
     });
