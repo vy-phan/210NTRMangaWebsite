@@ -13,16 +13,16 @@ const mangaSchema = new mongoose.Schema({
     },
     description: {
         type: String
-    }, 
+    },
     status: {
         type: String,
         enum: ['Ongoing', 'Completed', 'Cancelled'],
-    }, 
+    },
     category: {
         type: String,
-        enum: ['Manga', 'Manhwa'], 
-        default: 'Manga', 
-        index: true 
+        enum: ['Manga', 'Manhwa'],
+        default: 'Manga',
+        index: true
     },
     genres: [
         {
@@ -33,8 +33,14 @@ const mangaSchema = new mongoose.Schema({
     ],
     poster: {
         type: String
-    }, 
-},{timestamps: true})
+    },
+    author: {
+        type: String
+    },
+    artist: {
+        type: String
+    },
+}, { timestamps: true })
 
-const Manga = mongoose.model('Manga',mangaSchema)
+const Manga = mongoose.model('Manga', mangaSchema)
 export default Manga

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { FiUsers, FiBookOpen, FiTag, FiPieChart, FiBarChart } from 'react-icons/fi';
+import { FiUsers, FiBookOpen, FiTag, FiPieChart, FiBarChart, FiFileText, FiTrendingUp, FiLayers } from 'react-icons/fi';
 import { getLengthUsersAPI } from '../../api/authApi';
 import { getLengthGenresAPI } from '../../api/genreApi';
-import { getLengthMangasAPI, getAllMangasAPI } from '../../api/mangaApi';
+import { getLengthMangasAPI, getMangaStatsAPI } from '../../api/mangaApi';
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  LineChart, Line
 } from 'recharts';
 
 interface StatCardProps {
@@ -69,11 +70,14 @@ const Dashboard = () => {
     users: 0,
     mangas: 0,
     genres: 0,
+    chapters: 0,
   });
 
   // State cho dữ liệu biểu đồ
   const [statusData, setStatusData] = useState<{ name: string; value: number; color: string }[]>([]);
   const [genreData, setGenreData] = useState<{ name: string; value: number }[]>([]);
+  const [categoryData, setCategoryData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [growthData, setGrowthData] = useState<{ date: string; count: number }[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,58 +87,49 @@ const Dashboard = () => {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
-        const [userCount, mangaCount, genreCount, allMangas] = await Promise.all([
+        const [userCount, mangaCount, genreCount, statsData] = await Promise.all([
           getLengthUsersAPI(),
           getLengthMangasAPI(),
           getLengthGenresAPI(),
-          getAllMangasAPI(), // Lấy toàn bộ truyện để phân tích
+          getMangaStatsAPI(), // Endpoint mới: tính toán sẵn ở server
         ]);
 
         setStats({
           users: userCount,
           mangas: mangaCount,
           genres: genreCount,
+          chapters: statsData.totalChapters,
         });
 
-        // --- 1. Xử lý dữ liệu cho biểu đồ Trạng thái (Ongoing/Completed) ---
-        const statusCounts: Record<string, number> = {};
-        allMangas.forEach(manga => {
-          const status = manga.status || 'Unknown';
-          statusCounts[status] = (statusCounts[status] || 0) + 1;
-        });
-
-        const formatStatusData = Object.keys(statusCounts).map(key => {
-          const config = STATUS_CONFIG[key] || STATUS_CONFIG['Unknown'];
-
+        // --- 1. Xử lý dữ liệu cho biểu đồ Trạng thái ---
+        const formatStatusData = statsData.statusStats.map(stat => {
+          const config = STATUS_CONFIG[stat.status] || STATUS_CONFIG['Unknown'];
           return {
             name: config.label,
-            value: statusCounts[key],
+            value: stat.count,
             color: config.color
           };
         });
-
         setStatusData(formatStatusData);
 
+        // --- 2. Xử lý dữ liệu cho biểu đồ Thể loại ---
+        const formatGenreData = statsData.genreStats.map(stat => ({
+          name: stat.name,
+          value: stat.count
+        }));
+        setGenreData(formatGenreData);
 
-        // --- 2. Xử lý dữ liệu cho biểu đồ Thể loại (Top 5) ---
-        const genreCounts: Record<string, number> = {};
-        allMangas.forEach(manga => {
-          if (Array.isArray(manga.genres)) {
-            manga.genres.forEach((g: any) => {
-              // Kiểm tra nếu g là object (đã populate) hay string id
-              const genreName = typeof g === 'string' ? 'Unknown' : g.name;
-              genreCounts[genreName] = (genreCounts[genreName] || 0) + 1;
-            });
-          }
-        });
+        // --- 3. Xử lý dữ liệu cho biểu đồ Phân loại (Manga/Manhwa) ---
+        const CAT_COLORS: Record<string, string> = { 'Manga': '#8884d8', 'Manhwa': '#82ca9d' };
+        const formatCategoryData = statsData.categoryStats.map(stat => ({
+          name: stat.category,
+          value: stat.count,
+          color: CAT_COLORS[stat.category] || '#A6ADBB'
+        }));
+        setCategoryData(formatCategoryData);
 
-        // Sắp xếp và lấy Top 5 thể loại phổ biến nhất
-        const sortedGenres = Object.entries(genreCounts)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 5)
-          .map(([name, value]) => ({ name, value }));
-
-        setGenreData(sortedGenres);
+        // --- 4. Tăng trưởng ---
+        setGrowthData(statsData.growthStats);
 
       } catch (error) {
         toast.error("Không thể tải dữ liệu thống kê.");
@@ -164,26 +159,33 @@ const Dashboard = () => {
       </header>
 
       {/* Lưới hiển thị các card thống kê */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<FiUsers className="text-4xl" />}
-          title="Tổng Người Dùng"
+          title="Người Dùng"
           value={stats.users.toLocaleString()}
-          description="Tất cả người dùng đã đăng ký"
+          description="Đã đăng ký tài khoản"
           colorClass="border-info"
         />
         <StatCard
           icon={<FiBookOpen className="text-4xl" />}
-          title="Tổng Số Truyện"
+          title="Tổng Truyện"
           value={stats.mangas.toLocaleString()}
-          description="Số lượng truyện trong hệ thống"
+          description="Truyện trong hệ thống"
           colorClass="border-success"
         />
         <StatCard
+          icon={<FiFileText className="text-4xl" />}
+          title="Tổng Chapter"
+          value={stats.chapters.toLocaleString()}
+          description="Chương đã upload"
+          colorClass="border-primary"
+        />
+        <StatCard
           icon={<FiTag className="text-4xl" />}
-          title="Tổng Thể Loại"
+          title="Thể Loại"
           value={stats.genres.toLocaleString()}
-          description="Số lượng thể loại khả dụng"
+          description="Phân loại truyện"
           colorClass="border-warning"
         />
       </div>
@@ -191,7 +193,32 @@ const Dashboard = () => {
       {/* --- KHU VỰC BIỂU ĐỒ --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* Biểu đồ 1: Phân bố theo Trạng thái */}
+        {/* Biểu đồ 1: Tăng trưởng Upload Chapter (7 ngày) */}
+        <div className="card bg-base-100 shadow-lg lg:col-span-2">
+          <div className="card-body">
+            <h2 className="card-title flex items-center gap-2">
+              <FiTrendingUp className="text-success" />
+              Tăng trưởng Upload Chapter (7 ngày gần nhất)
+            </h2>
+            <div className="h-72 w-full mt-4">
+              {growthData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={growthData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                    <Line type="monotone" dataKey="count" stroke="#36D399" strokeWidth={3} dot={{ r: 6 }} activeDot={{ r: 8 }} name="Số chương" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-base-content/50 italic">Không có dữ liệu upload trong 7 ngày qua.</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Biểu đồ 2: Phân bố theo Trạng thái */}
         <div className="card bg-base-100 shadow-lg">
           <div className="card-body">
             <h2 className="card-title flex items-center gap-2">
@@ -211,14 +238,11 @@ const Dashboard = () => {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {statusData.map((entry,index) => (
+                      {statusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      content={<CustomTooltip />}
-                      cursor={{ fill: 'transparent' }}
-                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                     <Legend verticalAlign="bottom" height={36} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -229,8 +253,41 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Biểu đồ 2: Top 5 Thể loại phổ biến */}
+        {/* Biểu đồ 3: Phân loại Manga vs Manhwa */}
         <div className="card bg-base-100 shadow-lg">
+          <div className="card-body">
+            <h2 className="card-title flex items-center gap-2">
+              <FiLayers className="text-accent" />
+              Phân loại Truyện
+            </h2>
+            <div className="h-64 w-full">
+              {categoryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent ? percent * 100 : 0).toFixed(0)}%`}
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-base-content/50">Chưa có dữ liệu</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Biểu đồ 4: Top 5 Thể loại phổ biến */}
+        <div className="card bg-base-100 shadow-lg lg:col-span-2">
           <div className="card-body">
             <h2 className="card-title flex items-center gap-2">
               <FiBarChart className="text-secondary" />
@@ -239,14 +296,14 @@ const Dashboard = () => {
             <div className="h-64 w-full">
               {genreData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={genreData} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                  <BarChart data={genreData} layout="horizontal">
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#1f2937', color: '#fff', borderRadius: '8px' }} />
-                    <Bar dataKey="value" fill="#82ca9d" radius={[0, 4, 4, 0]}>
-                      {genreData.map((entry, index) => (
-                        <Cell key={`cell-${entry.name}`} fill={index % 2 === 0 ? '#3ABFF8' : '#36D399'} />
+                    <Bar dataKey="value" fill="#82ca9d" radius={[4, 4, 0, 0]}>
+                      {genreData.map((_entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3ABFF8' : '#36D399'} />
                       ))}
                     </Bar>
                   </BarChart>

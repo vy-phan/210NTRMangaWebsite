@@ -16,7 +16,8 @@
 .env.*.local
 /frontend/.env.local
 /backend/.env
-
+git_auto.py
+scraper.py
 
 # ===================================================================
 # Build Output - Bỏ qua các file được tạo ra sau khi build

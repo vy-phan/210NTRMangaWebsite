@@ -16,6 +16,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiSave, FiUploadCloud, FiX } from 'react-icons/fi';
 import SortableImageItem from '../../pages/admin/SortableImageItem';
 import toast from 'react-hot-toast';
+import { uploadImagesAPI } from '../../api/imageUpload';
 
 interface ChapterModalProps {
     isOpen: boolean;
@@ -24,9 +25,10 @@ interface ChapterModalProps {
     initialData: Chapter | null;
     mode: 'add' | 'edit';
     existingChapters: Chapter[]; // <<-- Thêm prop này
+    mangaName: string;
 }
 
-const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChapters }: ChapterModalProps) => {
+const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChapters, mangaName }: ChapterModalProps) => {
     const [formData, setFormData] = useState({
         number: 0,
         title: '',
@@ -35,6 +37,8 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
     const [isSaving, setIsSaving] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [showThumb, setShowThumb] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
 
     const [numImagesToAdd, setNumImagesToAdd] = useState(1);
 
@@ -97,7 +101,7 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
 
         // Reset lại số lượng về 1 cho lần thêm tiếp theo
         setNumImagesToAdd(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.images, numImagesToAdd]);
 
     const removeImageField = useCallback((index: number) => {
@@ -138,6 +142,75 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
         // Gửi đi dữ liệu đã được cập nhật
         onSave({ ...formData, images: finalImages });
         setIsSaving(false);
+    };
+
+    // === XỬ LÝ UPLOAD ẢNH (KÉO THẢ HOẶC CHỌN FILE) ===
+
+    const processFiles = async (files: FileList | File[]) => {
+        if (!files || files.length === 0) return;
+
+        setIsUploading(true);
+        try {
+            // 1. Chuyển FileList sang Array và sắp xếp theo tên file (số học)
+            // Đảm bảo thứ tự strict theo yêu cầu: 1.jpg, 2.jpg, 10.jpg...
+            const sortedFiles = Array.from(files).sort((a, b) =>
+                a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+            );
+
+            // 2. Upload lên server
+            const uploadedImages = await uploadImagesAPI(mangaName, sortedFiles, formData.number);
+
+            // 3. Tạo mảng ảnh mới từ kết quả trả về
+            // Lấy số trang cuối cùng hiện tại để tiếp tục đánh số
+            const lastPageNumber = formData.images.length > 0
+                ? Math.max(...formData.images.map(img => img.pageNumber))
+                : 0;
+
+            const newImagesToAdd = uploadedImages.map((img, index) => ({
+                url: img.secure_url,
+                pageNumber: lastPageNumber + index + 1
+            }));
+
+            // 4. Thêm vào form data
+            setFormData(prev => ({
+                ...prev,
+                images: [...prev.images, ...newImagesToAdd]
+            }));
+
+            toast.success(`Đã upload và thêm thành công ${uploadedImages.length} ảnh!`);
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Lỗi khi upload ảnh. Vui lòng thử lại.");
+        } finally {
+            setIsUploading(false);
+            setDragActive(false);
+        }
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            processFiles(e.dataTransfer.files);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            processFiles(e.target.files);
+        }
     };
 
     const handleBulkImport = () => {
@@ -241,6 +314,43 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                         </div>
                     </div>
 
+
+
+                    {/* Drag & Drop Upload Zone */}
+                    <div
+                        className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer
+                            ${dragActive ? 'border-primary bg-primary/10' : 'border-base-300 hover:border-primary/50'}
+                            ${isUploading ? 'opacity-50 pointer-events-none' : ''}
+                        `}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                        onClick={() => document.getElementById('chapter-file-upload')?.click()}
+                    >
+                        <input
+                            id="chapter-file-upload"
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={handleFileSelect}
+                            accept="image/*"
+                        />
+
+                        {isUploading ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="loading loading-spinner loading-lg text-primary"></span>
+                                <span className="text-sm font-medium">Đang tải ảnh lên và xử lý...</span>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 text-center">
+                                <FiUploadCloud className="w-10 h-10 text-base-content/50" />
+                                <p className="font-medium text-lg">Kéo thả ảnh vào đây hoặc click để chọn</p>
+                                <p className="text-xs text-base-content/60">Hỗ trợ upload hàng loạt. Ảnh sẽ được sắp xếp tự động theo tên file.</p>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Dynamic Image Fields */}
                     <div className="form-control">
                         <div className="flex items-center justify-between mt-1">
@@ -277,7 +387,7 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
                                 </div>
                             </SortableContext>
                         </DndContext>
-                        
+
                         <div className="join w-full mt-3">
                             <input
                                 type="number"
@@ -371,9 +481,9 @@ const ChapterModal = ({ isOpen, onClose, onSave, initialData, mode, existingChap
 
 
                 </form>
-            </div>
+            </div >
             <form method="dialog" className="modal-backdrop"><button onClick={onClose}>close</button></form>
-        </dialog>
+        </dialog >
     );
 };
 

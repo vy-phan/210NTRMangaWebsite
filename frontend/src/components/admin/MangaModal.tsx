@@ -19,6 +19,8 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
         poster: '',
         category: 'Manga',
         genres: [] as string[],
+        author: '',
+        artist: '',
     });
     const [allGenres, setAllGenres] = useState<Genre[]>([]);
     const [isLoadingGenres, setIsLoadingGenres] = useState(true);
@@ -52,9 +54,11 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
                 poster: initialData.poster || '',
                 category: (initialData as any).category || 'Manga',
                 genres: (initialData.genres?.map(g => typeof g === 'string' ? g : g._id) || []) as string[],
+                author: initialData.author || '',
+                artist: initialData.artist || '',
             });
         } else {
-            setFormData({ title: '', description: '', status: 'Ongoing', poster: '', category: 'Manga', genres: [] });
+            setFormData({ title: '', description: '', status: 'Ongoing', poster: '', category: 'Manga', genres: [], author: '', artist: '' });
         }
     }, [isOpen, mode, initialData]);
 
@@ -216,6 +220,48 @@ const MangaModal = ({ isOpen, onClose, onSave, initialData, mode }: MangaModalPr
                             </select>
                         </div>
                     </div>
+
+                    {/* Author & Artist Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    Tác giả
+                                </span>
+                            </label>
+                            <input
+                                type="text"
+                                name="author"
+                                value={formData.author}
+                                onChange={handleChange}
+                                className="input input-bordered focus:input-primary"
+                                placeholder="Nhập tên tác giả..."
+                            />
+                        </div>
+
+                        <div className="form-control">
+                            <label className="label">
+                                <span className="label-text font-semibold flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Họa sĩ
+                                </span>
+                            </label>
+                            <input
+                                type="text"
+                                name="artist"
+                                value={formData.artist}
+                                onChange={handleChange}
+                                className="input input-bordered focus:input-primary"
+                                placeholder="Nhập tên họa sĩ..."
+                            />
+                        </div>
+                    </div>
+
 
                     {/* Custom Genre Selection */}
                     <div className="form-control">

@@ -6,6 +6,7 @@ import ChapterModal from '../../components/admin/ChapterModal';
 import { FiPlus, FiEdit, FiTrash2, FiImage } from 'react-icons/fi';
 import ImageLibraryModal from '../../components/admin/ImageLibraryModal';
 import { getMangaTitleByIdAPI } from '../../api/mangaApi';
+import { deleteChapterImagesAPI } from '../../api/imageUpload';
 import { formatSmartTime } from '../../utils/dateFomat';
 
 const ChapterAdmin = () => {
@@ -82,17 +83,36 @@ const ChapterAdmin = () => {
         });
     };
 
-    const handleDeleteChapter = (id: string) => {
-        if (window.confirm('Bạn có chắc muốn xóa chương này?')) {
-            toast.promise(deleteChapterAPI(id), {
-                loading: 'Đang xóa...',
-                success: () => {
-                    setChapters(prev => prev.filter(c => c._id !== id));
-                    return 'Xóa chương thành công!';
-                },
-                error: 'Lỗi khi xóa chương.',
-            });
+    const handleDeleteChapter = async (chapter: Chapter) => {
+        if (!window.confirm(`Bạn có chắc muốn xóa chương ${chapter.number} và toàn bộ ảnh của nó?`)) {
+            return;
         }
+
+        const deletePromise = async () => {
+            // 1. Xóa ảnh trên ImageKit và trong DB (nếu có mangaName)
+            if (mangaName) {
+                try {
+                    await deleteChapterImagesAPI(mangaName, chapter.number);
+                } catch (error) {
+                    console.error("Lỗi khi xóa ảnh của chương:", error);
+                    // Có thể throw lỗi hoặc vẫn tiếp tục xóa chapter tùy logic
+                    // Ở đây chọn tiếp tục xóa chapter
+                }
+            }
+
+            // 2. Xóa Chapter record
+            await deleteChapterAPI(chapter._id);
+            return 'Xóa chương và ảnh thành công!';
+        };
+
+        toast.promise(deletePromise(), {
+            loading: 'Đang xóa chương và dọn dẹp ảnh...',
+            success: (msg) => {
+                setChapters(prev => prev.filter(c => c._id !== chapter._id));
+                return msg || 'Xóa thành công!';
+            },
+            error: 'Lỗi khi xóa chương.',
+        });
     };
 
     if (isLoading) return <div className="text-center p-8"><span className="loading loading-spinner loading-lg"></span></div>;
@@ -174,7 +194,7 @@ const ChapterAdmin = () => {
                                                 <div className="tooltip" data-tip="Xóa chương">
                                                     <button
                                                         className="btn btn-ghost btn-lg btn-circle"
-                                                        onClick={() => handleDeleteChapter(chapter._id)}
+                                                        onClick={() => handleDeleteChapter(chapter)}
                                                     >
                                                         <FiTrash2 className="text-error" />
                                                     </button>
@@ -196,6 +216,7 @@ const ChapterAdmin = () => {
                 initialData={editingChapter}
                 mode={modalMode}
                 existingChapters={chapters}
+                mangaName={mangaName || ''}
             />
 
             {mangaName && (

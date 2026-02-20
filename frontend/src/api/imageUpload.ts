@@ -7,9 +7,12 @@ import apiClient from "./apiClient";
  * @param {FileList | File[]} files - The list of files to upload from an <input type="file">.
  * @returns {Promise<ImageUpload[]>} A promise that resolves to an array of uploaded image data.
  */
-export const uploadImagesAPI = async (mangaName: string, files: FileList | File[]): Promise<ImageUpload[]> => {
+export const uploadImagesAPI = async (mangaName: string, files: FileList | File[], chapter?: number | string): Promise<ImageUpload[]> => {
     const formData = new FormData();
     formData.append('mangaName', mangaName);
+    if (chapter !== undefined) {
+        formData.append('chapter', chapter.toString());
+    }
     for (let i = 0; i < files.length; i++) {
         formData.append('images', files[i]);
     }
@@ -61,6 +64,41 @@ export const deleteImageAPI = async (imageId: string): Promise<void> => {
         throw new Error(response.data.message || 'Failed to delete image');
     } catch (error) {
         console.error("Error deleting image:", error);
+        throw error;
+    }
+};
+
+/**
+ * Deletes all images belonging to a specific chapter folder.
+ * @param {string} mangaName 
+ * @param {string|number} chapter 
+ */
+export const deleteChapterImagesAPI = async (mangaName: string, chapter: string | number): Promise<void> => {
+    try {
+        const response = await apiClient.post('/images/delete-chapter', { mangaName, chapter });
+        if (response.data && response.data.success) {
+            return;
+        }
+        throw new Error(response.data.message || 'Failed to delete chapter images');
+    } catch (error) {
+        console.error("Error deleting chapter images:", error);
+        throw error;
+    }
+};
+
+/**
+ * Deletes all images belonging to a specific manga.
+ * @param {string} mangaName 
+ */
+export const deleteMangaFolderAPI = async (mangaName: string): Promise<void> => {
+    try {
+        const response = await apiClient.post('/images/delete-manga', { mangaName });
+        if (response.data && response.data.success) {
+            return;
+        }
+        throw new Error(response.data.message || 'Failed to delete manga folder');
+    } catch (error) {
+        console.error("Error deleting manga folder:", error);
         throw error;
     }
 };

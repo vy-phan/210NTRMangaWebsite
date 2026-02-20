@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { FiBookOpen, FiBookmark, FiClock, FiMaximize2, FiMessageSquare, FiX } from 'react-icons/fi';
+import { FiBookOpen, FiBookmark, FiClock, FiMaximize2, FiMessageSquare, FiUser, FiX } from 'react-icons/fi';
 import { formatTimeAgo } from '../utils/dateFomat';
 import { getMangaBySlugAPI, getRelatedMangasAPI } from '../api/mangaApi';
 import MangaStatusBadge from '../components/common/MangaStatusBadge';
@@ -264,6 +264,35 @@ const DetailManga = () => {
                   </Link>
                 ))}
               </div>
+
+              {(manga.author || manga.artist) && (
+                <div className="flex flex-col gap-2 mt-1">
+                  {manga.author && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full px-3 py-1 text-xs font-semibold shrink-0">
+                        <FiUser className="w-3.5 h-3.5" />
+                        Tác giả
+                      </div>
+                      <span className="text-sm font-medium text-base-content hover:text-primary transition-colors cursor-pointer">
+                        {manga.author}
+                      </span>
+                    </div>
+                  )}
+                  {manga.artist && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 bg-secondary/10 text-secondary border border-secondary/20 rounded-full px-3 py-1 text-xs font-semibold shrink-0">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Họa sĩ
+                      </div>
+                      <span className="text-sm font-medium text-base-content hover:text-secondary transition-colors cursor-pointer">
+                        {manga.artist}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center gap-3 mt-2">
                 {isLoadingChapters && (

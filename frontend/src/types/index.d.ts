@@ -19,6 +19,8 @@ declare global {
         category?: 'Manga' | 'Manhwa';
         genres?: (string | Genre)[];
         poster?: string;
+        author?: string;
+        artist?: string;
         createdAt?: string;
         updatedAt?: string;
         latestChapters?: ChapterPreview[];

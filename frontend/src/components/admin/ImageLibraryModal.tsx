@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { toast } from 'react-hot-toast';
 import { FiX, FiUploadCloud, FiTrash2, FiCopy, FiClipboard } from 'react-icons/fi';
-import { deleteImageAPI, getImagesByMangaNameAPI, uploadImagesAPI } from '../../api/imageUpload';
+import { deleteImageAPI, getImagesByMangaNameAPI, uploadImagesAPI, deleteMangaFolderAPI } from '../../api/imageUpload';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 
@@ -16,17 +16,17 @@ interface ImageLibraryModalProps {
 const imageCache = new Map<string, ImageUpload[]>();
 
 // Component tối ưu cho từng ảnh với memo để tránh re-render không cần thiết
-const ImageCard = memo(({ 
-    image, 
-    index, 
-    onDelete, 
-    onCopyUrl, 
-    onDoubleClick 
-}: { 
-    image: ImageUpload; 
-    index: number; 
-    onDelete: (id: string) => void; 
-    onCopyUrl: (url: string) => void; 
+const ImageCard = memo(({
+    image,
+    index,
+    onDelete,
+    onCopyUrl,
+    onDoubleClick
+}: {
+    image: ImageUpload;
+    index: number;
+    onDelete: (id: string) => void;
+    onCopyUrl: (url: string) => void;
     onDoubleClick: (index: number) => void;
 }) => {
     const [isLoaded, setIsLoaded] = useState(false);
@@ -58,19 +58,18 @@ const ImageCard = memo(({
     }, []);
 
     return (
-        <div 
+        <div
             ref={imgRef}
             className="card card-compact bg-base-100 shadow-xl group relative overflow-hidden cursor-pointer"
             onDoubleClick={() => onDoubleClick(index)}
         >
             <figure className="aspect-square bg-base-200">
                 {isInView ? (
-                    <img 
-                        src={image.secure_url} 
-                        alt="Manga page" 
-                        className={`aspect-square object-cover transition-opacity duration-300 ${
-                            isLoaded ? 'opacity-100' : 'opacity-0'
-                        }`}
+                    <img
+                        src={image.secure_url}
+                        alt="Manga page"
+                        className={`aspect-square object-cover transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'
+                            }`}
                         loading="lazy"
                         onLoad={() => setIsLoaded(true)}
                         decoding="async"
@@ -83,8 +82,8 @@ const ImageCard = memo(({
             </figure>
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center items-center gap-2">
                 <div className="tooltip" data-tip="Sao chép URL">
-                    <button 
-                        className="btn btn-circle btn-sm btn-info" 
+                    <button
+                        className="btn btn-circle btn-sm btn-info"
                         onClick={(e) => {
                             e.stopPropagation();
                             onCopyUrl(image.secure_url);
@@ -94,8 +93,8 @@ const ImageCard = memo(({
                     </button>
                 </div>
                 <div className="tooltip" data-tip="Xóa ảnh">
-                    <button 
-                        className="btn btn-circle btn-sm btn-error" 
+                    <button
+                        className="btn btn-circle btn-sm btn-error"
                         onClick={(e) => {
                             e.stopPropagation();
                             onDelete(image._id);
@@ -171,7 +170,7 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
             return;
         }
         setIsUploading(true);
-        
+
         const uploadPromise = uploadImagesAPI(mangaName, selectedFiles);
 
         toast.promise(uploadPromise, {
@@ -215,7 +214,7 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
         navigator.clipboard.writeText(url);
         toast.success("Đã sao chép URL!");
     }, []);
-    
+
     // =============================================================
     // CHỨC NĂNG MỚI: SAO CHÉP HÀNG LOẠT THEO ĐỊNH DẠNG INDEX:URL
     // =============================================================
@@ -226,21 +225,42 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
         }
         // 1. Sắp xếp ảnh từ CŨ NHẤT đến MỚI NHẤT để index đúng thứ tự thời gian
         const sortedForIndex = [...images].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        
+
         // 2. Tạo chuỗi định dạng "index:url"
         const indexedUrls = sortedForIndex.map((image, index) => `${index}:${image.secure_url}`).join('\n');
-        
+
         // 3. Sao chép vào clipboard
         navigator.clipboard.writeText(indexedUrls);
         toast.success(`Đã sao chép ${sortedForIndex.length} URL theo định dạng index!`);
     };
-    
+
     // =============================================================
     // CHỨC NĂNG MỚI: MỞ LIGHTBOX KHI DOUBLE CLICK
     // =============================================================
     const openLightbox = useCallback((index: number) => {
         setLightboxIndex(index);
     }, []);
+
+    // =============================================================
+    // CHỨC NĂNG MỚI: XÓA TOÀN BỘ THƯ MỤC MANGA
+    // =============================================================
+    const handleDeleteMangaFolder = useCallback(() => {
+        if (!window.confirm(`CẢNH BÁO NGUY HIỂM!\n\nBạn có chắc chắn muốn xóa TOÀN BỘ ảnh và thư mục của truyện "${mangaName}" trên ImageKit và Database không?\n\nHành động này KHÔNG THỂ hoàn tác!`)) {
+            return;
+        }
+
+        const deletePromise = deleteMangaFolderAPI(mangaName);
+        toast.promise(deletePromise, {
+            loading: 'Đang xóa toàn bộ thư mục truyện...',
+            success: () => {
+                setImages([]);
+                imageCache.delete(mangaName);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                return 'Đã xóa toàn bộ ảnh và thư mục truyện thành công!';
+            },
+            error: (err) => err.message || 'Lỗi khi xóa thư mục truyện.',
+        });
+    }, [mangaName]);
 
 
     if (!isOpen) return null;
@@ -257,9 +277,9 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
                         </div>
                         <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}><FiX /></button>
                     </header>
-                    
+
                     {/* Body */}
-                    <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto" style={{ 
+                    <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto" style={{
                         willChange: 'scroll-position',
                         transform: 'translateZ(0)',
                         WebkitOverflowScrolling: 'touch'
@@ -281,9 +301,14 @@ const ImageLibraryModal = ({ isOpen, onClose, mangaName, onImagesUploaded }: Ima
                         <div className="divider flex items-center justify-between gap-4">
                             <span>Ảnh hiện có ({images.length})</span>
                             {/* Nút Copy hàng loạt */}
-                            <button className="btn btn-sm btn-outline" onClick={handleCopyAllAsIndexed} disabled={images.length === 0}>
-                                <FiClipboard /> Copy All (index:url)
-                            </button>
+                            <div className="flex gap-2">
+                                <button className="btn btn-sm btn-outline btn-error" onClick={handleDeleteMangaFolder} disabled={images.length === 0}>
+                                    <FiTrash2 /> Xóa Thư Mục Gốc
+                                </button>
+                                <button className="btn btn-sm btn-outline" onClick={handleCopyAllAsIndexed} disabled={images.length === 0}>
+                                    <FiClipboard /> Copy All (index:url)
+                                </button>
+                            </div>
                         </div>
 
                         {/* Image Grid */}

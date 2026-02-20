@@ -39,7 +39,7 @@ export const getRelatedMangasAPI = async (currentId: string, genreIds: string[])
         if (response.data && response.data.success) {
             return response.data.data;
         } else {
-            return []; 
+            return [];
         }
     } catch (error) {
         console.error("Error fetching related mangas:", error);
@@ -125,6 +125,26 @@ export const deleteMangaAPI = async (id: string): Promise<void> => {
         await apiClient.delete(`/manga/${id}`);
     } catch (error) {
         console.error("Error deleting manga:", error);
+        throw error;
+    }
+};
+
+export const getMangaStatsAPI = async (): Promise<{
+    statusStats: { status: string; count: number }[];
+    genreStats: { name: string; count: number }[];
+    categoryStats: { category: string; count: number }[];
+    totalChapters: number;
+    growthStats: { date: string; count: number }[];
+}> => {
+    try {
+        const response = await apiClient.get('/manga/stats');
+        if (response.data && response.data.success) {
+            return response.data.data;
+        } else {
+            throw new Error(response.data.message || 'Failed to fetch manga stats');
+        }
+    } catch (error) {
+        console.error("Error fetching manga stats:", error);
         throw error;
     }
 };
