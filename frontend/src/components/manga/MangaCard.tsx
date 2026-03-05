@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { formatTimeAgo } from '../../utils/dateFomat';
 import { useImageLoader } from '../../utils/useImageLoader';
+import { useHistoryStore } from '../../store/useHistoryStore';
 
 interface MangaCardProps {
   manga: Manga;
@@ -10,9 +11,11 @@ interface MangaCardProps {
 const MangaCard = ({ manga }: MangaCardProps) => {
   const latestChapTime = manga.latestChapters?.[0]?.createdAt;
   const displayTime = formatTimeAgo(latestChapTime || manga.updatedAt || manga.createdAt);
-  
+
   const { imageSrc, isLoading } = useImageLoader(manga.poster!, '/place-doro.webp');
   const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+
+  const { addToHistory, history } = useHistoryStore();
 
   useEffect(() => {
     const checkHiddenState = () => {
@@ -23,6 +26,27 @@ const MangaCard = ({ manga }: MangaCardProps) => {
       window.removeEventListener('storage-local-change', checkHiddenState);
     };
   }, []);
+
+  const isNewChapter = (createdAt?: string | Date) => {
+    if (!createdAt) return false;
+    const diff = new Date().getTime() - new Date(createdAt).getTime();
+    return diff > 0 && diff < 24 * 60 * 60 * 1000; // Dưới 24h và không phải tương lai
+  };
+
+  const checkIsRead = (chapterNum: number) => {
+    if (!manga) return false;
+    return history.some(h => h.mangaId === manga._id && h.chapterNumber === chapterNum);
+  };
+
+  const handleReadChapter = (chap: any) => {
+    if (!manga) return;
+    const historyChapter = {
+      ...chap,
+      number: chap.number + 1,
+      title: chap.title || `${chap.number + 1}`
+    };
+    addToHistory(manga, historyChapter);
+  };
 
   const hasLatestChapters = Array.isArray(manga.latestChapters) && manga.latestChapters.length > 0;
 
@@ -51,27 +75,47 @@ const MangaCard = ({ manga }: MangaCardProps) => {
         </h3>
 
         {hasLatestChapters ? (
-          <div className="flex flex-col gap-2 mt-1">
-            {manga.latestChapters!.slice(0, 2).map((chap) => (
-              <div key={chap._id} className="flex justify-between items-center text-xs border-b border-base-200 pb-1 last:border-0 last:pb-0 ">
-                <Link 
-                  to={`/manga/${manga.slug}/chapter/${chap.number + 1}`}
-                  className="font-semibold hover:text-primary bg-base-200 px-2 py-0.5 rounded-md hover:bg-base-300 transition-colors"
-                >
-                  {manga.latestChapters!.length > 1 ? `Chương ${chap.title}` : `Oneshot`}
-                </Link>
-                <span className="text-[10px] text-base-content/60 italic">
-                  {formatTimeAgo(chap.createdAt)}
-                </span>
-              </div>
-            ))}
+          <div className="flex flex-col gap-1.5 mt-1">
+            {manga.latestChapters!.slice(0, 2).map((chap) => {
+              const displayNum = chap.number + 1;
+              const isRead = checkIsRead(displayNum);
+              const isOneshot = manga.latestChapters!.length === 1 && chap.title === "1";
+
+              return (
+                <div key={chap._id} className="flex justify-between items-center text-xs group/chap">
+                  <div className="flex items-center gap-1.5 flex-grow min-w-0 pr-1">
+                    <Link
+                      to={`/manga/${manga.slug}/chapter/${displayNum}`}
+                      className={`
+                        truncate px-2 py-1 rounded-md transition-colors text-[11px]
+                        ${isRead
+                          ? 'bg-base-200/50 text-base-content/40 font-normal line-through decoration-base-content/20'
+                          : 'bg-primary/10 text-primary font-bold hover:bg-primary/20'
+                        }
+                      `}
+                      onClick={() => handleReadChapter(chap)}
+                    >
+                      {isOneshot ? 'Oneshot' : `Chương ${chap.title}`}
+                    </Link>
+                    {isNewChapter(chap.createdAt) && (
+                      <span className="bg-red-500 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white shrink-0 shadow-sm animate-pulse-subtle">
+                        Mới
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-base-content/40 italic shrink-0">
+                    {formatTimeAgo(chap.createdAt)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : (
           //  Nếu API không trả về chapters, hiển thị như cũ (Time + Genres)
           <>
             {displayTime && (
               <p className="text-sm text-base-content/70 flex items-center gap-1">
-                 {displayTime}
+                {displayTime}
               </p>
             )}
 
@@ -79,9 +123,9 @@ const MangaCard = ({ manga }: MangaCardProps) => {
               <div className="card-actions flex-wrap mt-2">
                 {manga.genres.slice(0, 3).map(genre =>
                   typeof genre !== 'string' && (
-                    <Link 
-                      key={genre._id} 
-                      to={`/genre/${genre.slug}`} 
+                    <Link
+                      key={genre._id}
+                      to={`/genre/${genre.slug}`}
                       className="badge badge-outline text-xs hover:bg-info hover:text-white transition-colors"
                     >
                       {genre.name}
