@@ -33,11 +33,6 @@ const MangaCard = ({ manga }: MangaCardProps) => {
     return diff > 0 && diff < 24 * 60 * 60 * 1000; // Dưới 24h và không phải tương lai
   };
 
-  const checkIsRead = (chapterNum: number) => {
-    if (!manga) return false;
-    return history.some(h => h.mangaId === manga._id && h.chapterNumber === chapterNum);
-  };
-
   const handleReadChapter = (chap: any) => {
     if (!manga) return;
     const historyChapter = {
@@ -78,7 +73,6 @@ const MangaCard = ({ manga }: MangaCardProps) => {
           <div className="flex flex-col gap-1.5 mt-1">
             {manga.latestChapters!.slice(0, 2).map((chap) => {
               const displayNum = chap.number + 1;
-              const isRead = checkIsRead(displayNum);
               const isOneshot = manga.latestChapters!.length === 1 && chap.title === "1";
 
               return (
@@ -86,13 +80,10 @@ const MangaCard = ({ manga }: MangaCardProps) => {
                   <div className="flex items-center gap-1.5 flex-grow min-w-0 pr-1">
                     <Link
                       to={`/manga/${manga.slug}/chapter/${displayNum}`}
-                      className={`
+                      className="
                         truncate px-2 py-1 rounded-md transition-colors text-[11px]
-                        ${isRead
-                          ? 'bg-base-200/50 text-base-content/40 font-normal line-through decoration-base-content/20'
-                          : 'bg-primary/10 text-primary font-bold hover:bg-primary/20'
-                        }
-                      `}
+                        bg-primary/10 text-primary font-bold hover:bg-primary/20
+                      "
                       onClick={() => handleReadChapter(chap)}
                     >
                       {isOneshot ? 'Oneshot' : `Chương ${chap.title}`}
