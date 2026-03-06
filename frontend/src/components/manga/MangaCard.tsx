@@ -15,7 +15,7 @@ const MangaCard = ({ manga }: MangaCardProps) => {
   const { imageSrc, isLoading } = useImageLoader(manga.poster!, '/place-doro.webp');
   const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
 
-  const { addToHistory, history } = useHistoryStore();
+  const { addToHistory } = useHistoryStore();
 
   useEffect(() => {
     const checkHiddenState = () => {
