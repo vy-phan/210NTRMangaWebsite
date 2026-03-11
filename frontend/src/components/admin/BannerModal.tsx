@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { BannerInput } from '../../api/bannerApi';
-import { FiImage, FiX } from 'react-icons/fi'; // Cần cài react-icons hoặc dùng text 'Img', 'X'
+import { FiImage, FiX, FiInfo } from 'react-icons/fi'; // Cần cài react-icons hoặc dùng text 'Img', 'X'
 
 // === 1. KHAI BÁO DANH SÁCH ẢNH CÓ SẴN TRONG THƯ MỤC PUBLIC ===
 // Bạn cập nhật list này khi thêm ảnh mới vào folder
@@ -251,6 +251,17 @@ const BannerModal = ({ isOpen, onClose, onSave, initialData, mode }: BannerModal
                                     <div className="flex items-center justify-center h-full text-xs opacity-50">Chưa có ảnh nhân vật</div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                    
+                    {/* Gợi ý Upload ảnh */}
+                    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                            <FiInfo size={22} />
+                        </div>
+                        <div className="text-sm text-base-content/80">
+                            <span className="font-bold text-primary block mb-1">Lưu ý:</span>
+                            Bạn có thể đăng ảnh lên <a href="https://imgur.com/upload" target="_blank" rel="noreferrer" className="link link-primary font-bold">Imgur</a>, sau đó copy đường link ảnh và dán vào các ô URL ở trên.
                         </div>
                     </div>
                     

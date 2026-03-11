@@ -6,21 +6,21 @@ const TRENDING_TODAY = [
     {
         id: 1,
         title: "Hagure Mate",
-        image: "https://i4.hentailoop.com/2024/06/hagure-mate-e28892-yari-kyoushitsu-no-2-nen-c-gumi-e28892-page-1.jpg", 
+        image: "https://i4.hentailoop.com/2024/06/hagure-mate-e28892-yari-kyoushitsu-no-2-nen-c-gumi-e28892-page-1.jpg",
         views: "1.8K",
         slug: "hagure-mate"
     },
     {
         id: 2,
-        title: "Kiếm tiền và làm tình",
-        image: "https://hentaivn.world/wp-content/uploads/kiem-tien-va-lam-tinh.webp",
+        title: "Wireless Onahole",
+        image: "https://omegascans.org/_next/image?url=https%3A%2F%2Fmedia.omegascans.org%2Ffile%2FzFSsXt%2Fc2pkxyutdjkr2uzvdekasv4f.webp&w=640&q=75",
         views: "1.4K",
-        slug: "kiem-tien-va-lam-tinh"
+        slug: "wireless-onahole"
     },
     {
         id: 3,
         title: "Cô bạn gái quý giá của tôi",
-        image: "https://i2.mgcdnxyz.cfd/storage/images/covers/94c08dd8-2a69-4a09-b8cb-bbe83c7c983f.jpg",
+        image: "https://dcnvn2.mgcdnxyz.cfd/images/covers/9ee2204a-4498-49a2-9123-8a9d17c613b4.jpg",
         views: "1.1K",
         slug: "co-ban-gai-quy-gia-cua-toi"
     }
@@ -40,9 +40,9 @@ const TrendingSide = () => {
 
             <div className="flex flex-col gap-4 flex-grow">
                 {TRENDING_TODAY.map((item, index) => (
-                    <Link 
-                        key={item.id} 
-                        to={`/manga/${item.slug}`} 
+                    <Link
+                        key={item.id}
+                        to={`/manga/${item.slug}`}
                         className="group flex items-center gap-3 p-2 rounded-xl hover:bg-base-200 transition-colors"
                     >
                         {/* Số thứ hạng */}
