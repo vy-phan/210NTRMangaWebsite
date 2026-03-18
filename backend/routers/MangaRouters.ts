@@ -8,7 +8,7 @@ const router = express.Router()
 
 router.get('/', getManga);
 router.get("/count", protectRoute, adminOnly, getLengthManga);
-router.get("/stats", protectRoute, adminOnly, getMangaStats);
+router.get("/stats", getMangaStats);
 router.get("/slug/:slug", getMangaBySlug);
 router.post('/related', getRelatedMangas);
 router.get('/category/:category', getMangaByCategory);
