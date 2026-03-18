@@ -40,6 +40,9 @@ const mangaSchema = new mongoose.Schema({
     artist: {
         type: String
     },
+    externalUrl: {
+        type: String
+    },
 }, { timestamps: true })
 
 const Manga = mongoose.model('Manga', mangaSchema)

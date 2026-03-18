@@ -29,6 +29,7 @@ const GenreAdmin = lazy(() => import('./pages/admin/Genre'));
 const ChapterAdmin = lazy(() => import('./pages/admin/Chapter'));
 const LayoutAdmin = lazy(() => import('./components/layout/LayoutAdmin'));
 const BannerAdmin = lazy(() => import('./pages/admin/Banner'));
+const PromotionAdmin = lazy(() => import('./pages/admin/Promotion'));
 
 // Guards (Giữ nguyên import thường hoặc lazy đều được, nhưng import thường an toàn hơn cho logic)
 import AdminRouteGuard from './components/auth/AdminRouteGuard';
@@ -104,6 +105,7 @@ const App = () => {
                 <Route path="/admin" element={<LayoutAdmin />}>
                   <Route index element={<Dashboard />} />
                   <Route path="banners" element={<BannerAdmin />} />
+                  <Route path="promotions" element={<PromotionAdmin />} />
                   <Route path="mangas" element={<MangaAdmin />} />
                   <Route path="genres" element={<GenreAdmin />} />
                   <Route path="mangas/:mangaName/:mangaId" element={<ChapterAdmin />} />

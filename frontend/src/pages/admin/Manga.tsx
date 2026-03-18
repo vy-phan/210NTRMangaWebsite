@@ -4,16 +4,32 @@ import { FiPlus, FiEdit, FiTrash2, FiBookOpen, FiSearch } from 'react-icons/fi';
 import { getAllMangasAPI, createMangaAPI, updateMangaAPI, deleteMangaAPI, type MangaInput } from '../../api/mangaApi';
 import MangaModal from '../../components/admin/MangaModal';
 import MangaStatusBadge from '../../components/common/MangaStatusBadge';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 const MangaAdmin = () => {
   const [mangas, setMangas] = useState<Manga[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState<'Manga' | 'Manhwa' | ''>('');
-  const [filterStatus, setFilterStatus] = useState<'Ongoing' | 'Completed' | 'Cancelled' | ''>('');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize state from URL (Normalize to lowercase for UI comparison)
+  const searchTerm = searchParams.get('q') || '';
+  const filterCategory = searchParams.get('loai')?.toLowerCase() || '';
+  const filterStatus = searchParams.get('trang-thai')?.toLowerCase() || '';
+
+  // Helper to update URL params
+  const updateParams = (updates: Record<string, string | null>) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === '') {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, value);
+      }
+    });
+    setSearchParams(newParams, { replace: true });
+  };
 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,12 +67,12 @@ const MangaAdmin = () => {
 
     // 2. Lọc theo Category (THÊM MỚI)
     if (filterCategory) {
-      list = list.filter(manga => manga.category === filterCategory);
+      list = list.filter(manga => manga.category?.toLowerCase() === filterCategory);
     }
 
     // 3. Lọc theo Status (THÊM MỚI)
     if (filterStatus) {
-      list = list.filter(manga => manga.status === filterStatus);
+      list = list.filter(manga => manga.status?.toLowerCase() === filterStatus);
     }
 
     return list;
@@ -123,32 +139,44 @@ const MangaAdmin = () => {
 
         {/* === CỤM NÚT LỌC VÀ THÊM MỚI (SỬA ĐỔI) === */}
         <div className="flex flex-wrap items-center gap-2">
-          
+
           {/* Lọc Category */}
-          <select 
+          <select
             className="select select-bordered select-md"
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value as any)}
+            onChange={(e) => updateParams({ loai: e.target.value })}
           >
-            <option value="">Tất cả Loại</option>
-            <option value="Manga">🇯🇵 Manga</option>
-            <option value="Manhwa">🇰🇷 Manhwa</option>
+            <option value="">Loại: Tất cả</option>
+            <option value="manga">🇯🇵 Manga</option>
+            <option value="manhwa">🇰🇷 Manhwa</option>
           </select>
 
           {/* Lọc Status */}
-          <select 
+          <select
             className="select select-bordered select-md"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
+            onChange={(e) => updateParams({ 'trang-thai': e.target.value })}
           >
-            <option value="">Tất cả Trạng thái</option>
-            <option value="Ongoing">Đang tiến hành</option>
-            <option value="Completed">Hoàn thành</option>
-            <option value="Cancelled">Đã hủy</option>
+            <option value="">Trạng thái: Tất cả</option>
+            <option value="ongoing">Đang tiến hành</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="cancelled">Đã hủy</option>
           </select>
 
-          {/* Nút Thêm Mới (Giữ nguyên nhưng đổi size cho đều) */}
-          <button className="btn btn-primary btn-md" onClick={handleOpenAddModal}>
+          {/* Nút Xóa bộ lọc (Chỉ hiện khi có lọc) */}
+          {(searchTerm || filterCategory || filterStatus) && (
+            <button
+              className="btn btn-outline btn-error btn-md  gap-2"
+              onClick={() => setSearchParams({})}
+            >
+              <FiTrash2 /> <span className="hidden sm:inline">Xóa bộ lọc</span>
+            </button>
+          )}
+
+          <div className="divider divider-horizontal mx-0 hidden lg:flex"></div>
+
+          {/* Nút Thêm Mới */}
+          <button className="btn btn-primary btn-md shadow-lg" onClick={handleOpenAddModal}>
             <FiPlus /> Thêm Truyện
           </button>
         </div>
@@ -163,7 +191,7 @@ const MangaAdmin = () => {
             className="grow"
             placeholder="Tìm kiếm theo tên hoặc slug..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => updateParams({ q: e.target.value })}
           />
         </label>
       </div>
@@ -216,6 +244,21 @@ const MangaAdmin = () => {
                         <line x1="10" y1="14" x2="21" y2="3"></line>
                       </svg>
                     </a>
+
+                    {manga.externalUrl && (
+                      <a
+                        href={manga.externalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-bold text-accent hover:underline flex items-center gap-1 mt-1 opacity-70"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        Nguồn Raw
+                      </a>
+                    )}
                   </td>
                   <td className="max-w-xs">
                     <div className="flex flex-wrap gap-1 items-center">
@@ -260,7 +303,7 @@ const MangaAdmin = () => {
                       ? 'badge-info'
                       : 'badge-secondary'
                       }`}>
-                      {manga.category}
+                      {manga.category || 'N/A'}
                     </span>
                   </td>
                   <td>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChaptersByMangaIdAPI, createChapterAPI, updateChapterAPI, deleteChapterAPI, type ChapterInput } from '../../api/chapterApi';
 import ChapterModal from '../../components/admin/ChapterModal';
@@ -14,7 +14,23 @@ const ChapterAdmin = () => {
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [currentMangaTitle, setCurrentMangaTitle] = useState<string>('Đang tải...');
     const [isLoading, setIsLoading] = useState(true);
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    const sortOrder = (searchParams.get('sort') as 'asc' | 'desc') || 'asc';
+    const [showId, setShowId] = useState(false);
+
+    // Helper to update URL params
+    const updateParams = (updates: Record<string, string | null>) => {
+        const newParams = new URLSearchParams(searchParams);
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === '') {
+                newParams.delete(key);
+            } else {
+                newParams.set(key, value);
+            }
+        });
+        setSearchParams(newParams, { replace: true });
+    };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -119,30 +135,55 @@ const ChapterAdmin = () => {
 
     return (
         <div className="container mx-auto p-4 md:p-6 space-y-6">
-            <header className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <div>
+            <header className="flex flex-col md:flex-row justify-between md:items-end gap-4">
+                <div className="space-y-1">
                     <h1 className="text-3xl font-bold">Quản lý Chương</h1>
-                    <h1 className="text-2xl font-bold text-primary py-3">{currentMangaTitle}</h1>
-
-                    <Link to={`/admin/mangas`} className="text-sm link link-hover">← Quay lại danh sách truyện</Link>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-primary">{currentMangaTitle}</h2>
+                        {showId && (
+                            <span 
+                                className="badge badge-ghost font-mono text-xs opacity-70 cursor-pointer select-all"
+                                onDoubleClick={() => {
+                                    if (mangaId) {
+                                        navigator.clipboard.writeText(mangaId);
+                                        toast.success("Đã sao chép ID!");
+                                    }
+                                }}
+                                title="Double click để sao chép ID"
+                            >
+                                ID: {mangaId}
+                            </span>
+                        )}
+                        <button
+                            className="btn btn-ghost btn-xs opacity-50 hover:opacity-100 font-bold"
+                            onClick={() => setShowId(!showId)}
+                        >
+                            {showId ? 'Ẩn ID' : 'Hiện ID'}
+                        </button>
+                    </div>
+                    <div>
+                        <Link to={`/admin/mangas`} className="text-sm link link-hover text-base-content/60">← Quay lại danh sách truyện</Link>
+                    </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {/* Nút Sắp xếp */}
                     <select
-                        className="select select-bordered"
+                        className="select select-bordered select-md"
                         value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                        onChange={(e) => updateParams({ sort: e.target.value })}
                     >
                         <option value="asc">Sắp xếp: Từ đầu</option>
                         <option value="desc">Sắp xếp: Mới nhất</option>
                     </select>
 
+                    <div className="divider divider-horizontal mx-0 hidden lg:flex"></div>
+
                     {/* Nút quản lý ảnh */}
-                    <button className="btn btn-accent" onClick={() => setIsImageLibraryOpen(true)}>
-                        <FiImage /> Thư Viện Ảnh
+                    <button className="btn btn-outline btn-accent btn-md" onClick={() => setIsImageLibraryOpen(true)}>
+                        <FiImage /> <span className="hidden sm:inline">Thư Viện Ảnh</span>
                     </button>
                     {/* Nút thêm chương mới */}
-                    <button className="btn btn-primary" onClick={handleOpenAddModal}>
+                    <button className="btn btn-primary btn-md shadow-lg" onClick={handleOpenAddModal}>
                         <FiPlus /> Thêm Chương Mới
                     </button>
                 </div>

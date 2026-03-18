@@ -1,32 +1,19 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiTrendingUp, FiChevronRight } from 'react-icons/fi';
-
-// Mock data hoặc nhận props từ Home
-const TRENDING_TODAY = [
-    {
-        id: 1,
-        title: "Hagure Mate",
-        image: "https://i4.hentailoop.com/2024/06/hagure-mate-e28892-yari-kyoushitsu-no-2-nen-c-gumi-e28892-page-1.jpg",
-        views: "1.8K",
-        slug: "hagure-mate"
-    },
-    {
-        id: 2,
-        title: "Wireless Onahole",
-        image: "https://omegascans.org/_next/image?url=https%3A%2F%2Fmedia.omegascans.org%2Ffile%2FzFSsXt%2Fc2pkxyutdjkr2uzvdekasv4f.webp&w=640&q=75",
-        views: "1.4K",
-        slug: "wireless-onahole"
-    },
-    {
-        id: 3,
-        title: "Cô bạn gái quý giá của tôi",
-        image: "https://dcnvn2.mgcdnxyz.cfd/images/covers/9ee2204a-4498-49a2-9123-8a9d17c613b4.jpg",
-        views: "1.1K",
-        slug: "co-ban-gai-quy-gia-cua-toi"
-    }
-];
+import { getPromotionsAPI, type Promotion } from '../../api/promotionApi';
 
 const TrendingSide = () => {
+    const [trendingItems, setTrendingItems] = useState<Promotion[]>([]);
+
+    useEffect(() => {
+        const fetchTrending = async () => {
+            const data = await getPromotionsAPI();
+            setTrendingItems(data);
+        };
+        fetchTrending();
+    }, []);
+
     return (
         <div className="bg-base-100 rounded-2xl p-5 shadow-lg h-full flex flex-col justify-between border border-base-200">
             <div className="flex items-center justify-between mb-4">
@@ -39,10 +26,10 @@ const TrendingSide = () => {
             </div>
 
             <div className="flex flex-col gap-4 flex-grow">
-                {TRENDING_TODAY.map((item, index) => (
+                {trendingItems.map((item, index) => (
                     <Link
-                        key={item.id}
-                        to={`/manga/${item.slug}`}
+                        key={item._id}
+                        to={item.link.startsWith('http') ? item.link : `/manga/${item.link}`}
                         className="group flex items-center gap-3 p-2 rounded-xl hover:bg-base-200 transition-colors"
                     >
                         {/* Số thứ hạng */}
@@ -52,7 +39,12 @@ const TrendingSide = () => {
 
                         {/* Ảnh nhỏ */}
                         <div className="w-12 h-16 shrink-0 rounded-lg overflow-hidden shadow-sm relative">
-                            <img src={item.image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            <img
+                                src={item.image}
+                                alt={item.title}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                loading="lazy"
+                            />
                         </div>
 
                         {/* Thông tin */}
@@ -60,12 +52,18 @@ const TrendingSide = () => {
                             <h4 className="font-bold text-sm truncate group-hover:text-primary transition-colors">
                                 {item.title}
                             </h4>
-                            <p className="text-xs text-base-content/60 mt-1">{item.views} lượt xem</p>
+                            <p className="text-xs text-base-content/60 mt-1">{item.views || '0'} lượt xem</p>
                         </div>
 
                         <FiChevronRight className="text-base-content/30 group-hover:text-primary transition-colors" />
                     </Link>
                 ))}
+
+                {trendingItems.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-8 opacity-50 italic text-sm">
+                        Đang cập nhật...
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -21,6 +21,7 @@ declare global {
         poster?: string;
         author?: string;
         artist?: string;
+        externalUrl?: string;
         createdAt?: string;
         updatedAt?: string;
         latestChapters?: ChapterPreview[];
