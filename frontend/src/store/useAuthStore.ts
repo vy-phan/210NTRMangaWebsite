@@ -1,5 +1,7 @@
+
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { secureStorage } from '../utils/secureStorage';
 
 interface AuthState {
   user: UserProfile | null;
@@ -22,7 +24,8 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ user: null, token: null, isLoading: false }),
     }),
     {
-      name: 'auth-storage', 
+      name: '_sys_pref',
+      storage: createJSONStorage(() => secureStorage),
     }
   )
 );

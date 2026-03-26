@@ -13,6 +13,7 @@ import chapterRouter from './routers/ChapterRouters';
 import imageUploadRouter from './routers/ImageUploadRouters';
 import bannerRouter from './routers/BannerRoutes';
 import promotionRouter from './routers/PromotionRoutes';
+import notificationRouter from './routers/NotificationRouters';
 import { startKeepAliveJob } from './utils/cronJob';
 
 dotenv.config();
@@ -39,6 +40,7 @@ app.use('/api/chapters', chapterRouter);
 app.use('/api/images', imageUploadRouter);
 app.use('/api/banners', bannerRouter);
 app.use('/api/promotions', promotionRouter);
+app.use('/api/notifications', notificationRouter);
 
 // Serve Frontend in Production
 if (process.env.NODE_ENV === 'production') {

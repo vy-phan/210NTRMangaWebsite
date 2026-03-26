@@ -241,6 +241,45 @@ export const updateManga = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
+ * @desc    Get top 5 popular genres
+ * @route   GET /api/manga/genre-stats
+ * @access  Public
+ */
+export const getGenreStats = asyncHandler(async (req: Request, res: Response) => {
+    const genreStats = await Manga.aggregate([
+        { $unwind: '$genres' },
+        {
+            $lookup: {
+                from: 'genres',
+                localField: 'genres',
+                foreignField: '_id',
+                as: 'genreInfo'
+            }
+        },
+        { $unwind: '$genreInfo' },
+        {
+            $group: {
+                _id: '$genreInfo.name',
+                count: { $sum: 1 }
+            }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 5 }
+    ]);
+
+    const formattedGenreStats = genreStats.map(stat => ({
+        name: stat._id,
+        count: stat.count
+    }));
+
+    res.status(200).json({
+        success: true,
+        data: formattedGenreStats
+    });
+});
+
+
+/**
  * @desc    Get manga statistics (status distribution, genre popularity)
  * @route   GET /api/manga/stats
  * @access  Private/Admin

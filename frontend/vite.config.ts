@@ -3,7 +3,10 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
- plugins: [
+  server: {
+    port: 5170,
+  },
+  plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -24,7 +27,7 @@ export default defineConfig({
           {
             urlPattern: ({ request }) => request.destination === 'image',
             handler: 'CacheFirst',
-            
+
             options: {
               cacheName: 'images-cache',
               expiration: {
@@ -35,14 +38,14 @@ export default defineConfig({
               // status 0: Là ảnh từ domain khác bị CORS (Opaque Response)
               // status 200: Là ảnh bình thường
               cacheableResponse: {
-                statuses: [0, 200], 
+                statuses: [0, 200],
               },
             },
           },
         ],
       },
       devOptions: {
-        enabled: true, 
+        enabled: true,
       }
     })
   ],

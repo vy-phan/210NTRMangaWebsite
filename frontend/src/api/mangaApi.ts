@@ -148,3 +148,17 @@ export const getMangaStatsAPI = async (): Promise<{
         throw error;
     }
 };
+
+export const getGenreStatsAPI = async (): Promise<{ name: string; count: number }[]> => {
+    try {
+        const response = await apiClient.get('/manga/genre-stats');
+        if (response.data && response.data.success) {
+            return response.data.data;
+        } else {
+            throw new Error(response.data.message || 'Failed to fetch genre stats');
+        }
+    } catch (error) {
+        console.error("Error fetching genre stats:", error);
+        throw error;
+    }
+};

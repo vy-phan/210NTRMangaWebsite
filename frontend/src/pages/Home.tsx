@@ -4,7 +4,7 @@ import { FiHash } from "react-icons/fi";
 import Banner from "../components/home/Banner";
 import RankingSidebar from "../components/home/RankingSidebar";
 import MangaGrid from "../components/manga/MangaGrid";
-import { getAllMangasAPI, getMangaStatsAPI } from "../api/mangaApi";
+import { getAllMangasAPI, getGenreStatsAPI } from "../api/mangaApi";
 import { useNetworkStatus } from "../hook/useNetworkStatus";
 import HeroBanner from "../components/home/HeroBanner";
 import TrendingSide from "../components/home/TrendingSide";
@@ -37,7 +37,7 @@ const Home = () => {
                 setIsLoading(true);
                 const [mangaData, statsData] = await Promise.all([
                     getAllMangasAPI(),
-                    getMangaStatsAPI()
+                    getGenreStatsAPI()
                 ]);
 
                 const sortedData = mangaData.sort((a, b) =>
@@ -45,8 +45,8 @@ const Home = () => {
                 );
                 setMangas(sortedData);
 
-                if (statsData && statsData.genreStats) {
-                    setHotTags(statsData.genreStats.map((g: any) => g.name));
+                if (statsData && statsData) {
+                    setHotTags(statsData.map((g: any) => g.name));
                 }
 
             } catch (error) {

@@ -8,7 +8,8 @@ import {
   FiMenu,
   FiX,
   FiGrid,
-  FiMonitor
+  FiMonitor,
+  FiBell
 } from 'react-icons/fi';
 
 const AdminSidebar = () => {
@@ -110,7 +111,11 @@ const AdminSidebar = () => {
               </NavLink>
               <NavLink to="/admin/promotions" className={navLinkClasses} onClick={closeMobileMenu}>
                 <FiMonitor size={20} />
-                Tùy chỉnh UI
+                Header Truyện Đề Cử
+              </NavLink>
+              <NavLink to="/admin/notifications" className={navLinkClasses} onClick={closeMobileMenu}>
+                <FiBell size={20} />
+                Thông báo
               </NavLink>
             </nav>
           </div>

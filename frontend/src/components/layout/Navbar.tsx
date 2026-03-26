@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
-import { FiSun, FiMoon, FiMenu, FiLogOut, FiEyeOff, FiEye } from 'react-icons/fi';
+import { FiSun, FiMoon, FiMenu, FiLogOut, FiEyeOff, FiEye, FiX } from 'react-icons/fi';
+import { getActiveNotificationAPI, type Notification } from '../../api/notificationApi';
 
 const Navbar = () => {
     const { user, logout: logoutFromStore } = useAuthStore();
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
     const [isHidden, setIsHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+    const [notification, setNotification] = useState<Notification | null>(null);
+    const [showNotification, setShowNotification] = useState(true);
 
 
     useEffect(() => {
@@ -20,6 +23,14 @@ const Navbar = () => {
         localStorage.setItem('isContentHidden', isHidden.toString());
         window.dispatchEvent(new Event('storage-local-change'));
     }, [isHidden]);
+
+    useEffect(() => {
+        const fetchNotification = async () => {
+            const data = await getActiveNotificationAPI();
+            setNotification(data);
+        }
+        fetchNotification();
+    }, []);
 
     const handleVisibilityChange = () => {
         setIsHidden(prev => !prev);
@@ -45,86 +56,101 @@ const Navbar = () => {
     );
 
     return (
-        <header className="navbar bg-base-100 shadow-sm sticky top-0 z-50">
-            <div className="navbar-start">
-                <div className="dropdown">
-                    <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-                        <FiMenu className="h-5 w-5" />
-                    </div>
-                    <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                        {navLinks}
-                    </ul>
-                </div>
-                <Link to="/" className="btn btn-ghost p-1 h-auto min-h-0 hover:bg-transparent">
-                    <img
-                        // Logic đổi ảnh theo theme
-                        src={theme === 'light' ? '/logoLight.png' : '/logoNight.png'}
-                        alt="210 NTR Manga"
-                        className="h-10 md:h-14 md:pl-20 w-auto object-contain transition-all duration-300"
-                    />
-                </Link>
-            </div>
-
-            {/* --- Navbar Center (Desktop) --- */}
-            <nav className="navbar-center hidden lg:flex">
-                <ul className="menu menu-horizontal px-1">
-                    {navLinks}
-                </ul>
-            </nav>
-
-            {/* --- Navbar End --- */}
-            <div className="navbar-end gap-2">
-                <button
-                    onClick={handleVisibilityChange}
-                    className="btn btn-ghost btn-circle"
-                    aria-label="Toggle content visibility"
-                    title={isHidden ? "Hiện nội dung" : "Ẩn nội dung"}
-                >
-                    {isHidden ? <FiEyeOff className="h-6 w-6" /> : <FiEye className="h-6 w-6" />}
-                </button>
-
-                <button onClick={handleThemeChange} className="btn btn-ghost btn-circle" aria-label="Toggle theme">
-                    {theme === 'light' ? <FiMoon className="h-6 w-6" /> : <FiSun className="h-6 w-6" />}
-                </button>
-
-                {user ? (
-                    <div className="dropdown dropdown-end">
-                        <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-                            <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                                <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                                    <img
-                                        alt="User Avatar"
-                                        src={user.avatarUrl ? user.avatarUrl : `https://ui-avatars.com/api/?name=${user.displayName}`}
-                                        referrerPolicy="no-referrer"
-                                    />
-                                </div>
-                            </div>
+        <>
+            <header className="navbar bg-base-100 shadow-sm sticky top-0 z-50">
+                <div className="navbar-start">
+                    <div className="dropdown">
+                        <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
+                            <FiMenu className="h-5 w-5" />
                         </div>
-                        <ul tabIndex={0} className="menu menu-md dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                            <li className="font-semibold p-2 pointer-events-none">{user.displayName}</li>
-                            <div className="divider my-0"></div>
-                            <li><Link to="/profile">Hồ sơ</Link></li>
-                            {
-                                user.role == 'admin' && (
-                                    <>
-                                        <li><Link to="/admin">Quản trị</Link></li>
-                                    </>
-                                )
-                            }
-                            <li>
-                                <button onClick={handleLogout} className="text-error">
-                                    <FiLogOut /> Đăng xuất
-                                </button>
-                            </li>
+                        <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                            {navLinks}
                         </ul>
                     </div>
-                ) : (
-                    <Link to="/login" className="btn btn-primary">
-                        Đăng nhập
+                    <Link to="/" className="btn btn-ghost p-1 h-auto min-h-0 hover:bg-transparent">
+                        <img
+                            // Logic đổi ảnh theo theme
+                            src={theme === 'light' ? '/logoLight.png' : '/logoNight.png'}
+                            alt="210 NTR Manga"
+                            className="h-10 md:h-14 md:pl-20 w-auto object-contain transition-all duration-300"
+                        />
                     </Link>
-                )}
-            </div>
-        </header>
+                </div>
+
+                {/* --- Navbar Center (Desktop) --- */}
+                <nav className="navbar-center hidden lg:flex">
+                    <ul className="menu menu-horizontal px-1">
+                        {navLinks}
+                    </ul>
+                </nav>
+
+                {/* --- Navbar End --- */}
+                <div className="navbar-end gap-2">
+                    <button
+                        onClick={handleVisibilityChange}
+                        className="btn btn-ghost btn-circle"
+                        aria-label="Toggle content visibility"
+                        title={isHidden ? "Hiện nội dung" : "Ẩn nội dung"}
+                    >
+                        {isHidden ? <FiEyeOff className="h-6 w-6" /> : <FiEye className="h-6 w-6" />}
+                    </button>
+
+                    <button onClick={handleThemeChange} className="btn btn-ghost btn-circle" aria-label="Toggle theme">
+                        {theme === 'light' ? <FiMoon className="h-6 w-6" /> : <FiSun className="h-6 w-6" />}
+                    </button>
+
+                    {user ? (
+                        <div className="dropdown dropdown-end">
+                            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                                <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                                    <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                                        <img
+                                            alt="User Avatar"
+                                            src={user.avatarUrl ? user.avatarUrl : `https://ui-avatars.com/api/?name=${user.displayName}`}
+                                            referrerPolicy="no-referrer"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <ul tabIndex={0} className="menu menu-md dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                                <li className="font-semibold p-2 pointer-events-none">{user.displayName}</li>
+                                <div className="divider my-0"></div>
+                                <li><Link to="/profile">Hồ sơ</Link></li>
+                                {
+                                    user.role == 'admin' && (
+                                        <>
+                                            <li><Link to="/admin">Quản trị</Link></li>
+                                        </>
+                                    )
+                                }
+                                <li>
+                                    <button onClick={handleLogout} className="text-error">
+                                        <FiLogOut /> Đăng xuất
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    ) : (
+                        <Link to="/login" className="btn btn-primary">
+                            Đăng nhập
+                        </Link>
+                    )}
+                </div>
+            </header>
+
+            {/* --- Banner Thông báo --- */}
+            {notification && showNotification && (
+                <div className="bg-accent  text-accent-content px-4 py-2 text-center text-xs md:text-sm font-bold flex items-center justify-center gap-2 sticky top-[64px] z-[40] animate-in slide-in-from-top duration-300">
+                    <span className="flex-1">{notification.content}</span>
+                    <button
+                        onClick={() => setShowNotification(false)}
+                        className="btn btn-ghost btn-xs btn-circle text-current hover:bg-black/10"
+                    >
+                        <FiX />
+                    </button>
+                </div>
+            )}
+        </>
     );
 };
 

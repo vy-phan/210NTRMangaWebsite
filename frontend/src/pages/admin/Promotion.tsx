@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { FiPlus, FiEdit, FiTrash2, FiMonitor, FiTrendingUp } from 'react-icons/fi';
-import { 
-    getPromotionsAPI, 
-    createPromotionAPI, 
-    updatePromotionAPI, 
-    deletePromotionAPI, 
-    type Promotion 
+import {
+    getPromotionsAPI,
+    createPromotionAPI,
+    updatePromotionAPI,
+    deletePromotionAPI,
+    type Promotion
 } from '../../api/promotionApi';
 import PromotionModal from '../../components/admin/PromotionModal';
 
@@ -89,11 +89,11 @@ const PromotionAdmin = () => {
         <div className="container mx-auto p-4 md:p-6 space-y-6">
             <header className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Quản lý UI Promotion</h1>
-                    <p className="text-base-content/70 mt-1">Quản lý nội dung Trending và Banners phụ của trang chủ.</p>
+                    <h1 className="text-3xl font-bold">Quản lý Truyện Đề Cử</h1>
+                    <p className="text-base-content/70 mt-1">Quản lý nội dung các Truyện Đề Cử của trang chủ.</p>
                 </div>
                 <button className="btn btn-primary shadow-lg" onClick={handleOpenAddModal}>
-                    <FiPlus /> Thêm UI Element
+                    <FiPlus /> Thêm Truyện Đề Cử
                 </button>
             </header>
 
@@ -112,12 +112,12 @@ const PromotionAdmin = () => {
                         <div key={promo._id} className="group relative bg-base-100 rounded-2xl md:rounded-3xl overflow-hidden border border-base-300 hover:border-primary/50 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col h-full">
                             {/* Image Header */}
                             <div className="relative aspect-[3/4] md:aspect-[2/3] overflow-hidden">
-                                <img 
-                                    src={promo.image} 
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                                    alt={promo.title} 
+                                <img
+                                    src={promo.image}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    alt={promo.title}
                                 />
-                                
+
                                 {/* Overlay Gradient */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
 
@@ -158,14 +158,14 @@ const PromotionAdmin = () => {
                                         Actions
                                     </span>
                                     <div className="flex items-center gap-1 md:gap-2 w-full md:w-auto justify-end">
-                                        <button 
-                                            onClick={() => handleOpenEditModal(promo)} 
+                                        <button
+                                            onClick={() => handleOpenEditModal(promo)}
                                             className="btn btn-ghost btn-xs md:btn-sm btn-circle text-info hover:bg-info/20 transition-all border border-transparent hover:border-info/30"
                                         >
                                             <FiEdit className="size-3.5 md:size-5" />
                                         </button>
-                                        <button 
-                                            onClick={() => handleDeletePromotion(promo._id)} 
+                                        <button
+                                            onClick={() => handleDeletePromotion(promo._id)}
                                             className="btn btn-ghost btn-xs md:btn-sm btn-circle text-error hover:bg-error/20 transition-all border border-transparent hover:border-error/30"
                                         >
                                             <FiTrash2 className="size-3.5 md:size-5" />

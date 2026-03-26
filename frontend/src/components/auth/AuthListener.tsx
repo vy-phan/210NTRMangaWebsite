@@ -47,11 +47,11 @@ const AuthListener = () => {
                 const loadingToast = toast.loading('Đang đồng bộ tài khoản...');
                 try {
                     const finalUser = await syncAndFetchCustomProfile(token);
-                    
+
                     setUser(finalUser, token);
                     toast.dismiss(loadingToast);
                     toast.success(`Chào mừng trở lại, ${finalUser.displayName}!`);
-                    
+
                     navigate('/');
 
                 } catch (error) {

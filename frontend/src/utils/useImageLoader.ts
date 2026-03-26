@@ -31,7 +31,7 @@ export const useImageLoader = (src: string, placeholderSrc: string) => {
     img.onerror = () => {
       console.error(`Failed to load image: ${src}`);
       // Giữ lại ảnh placeholder và tắt loading
-      setIsLoading(false); 
+      setIsLoading(false);
     };
 
     // Cleanup function (quan trọng nếu src thay đổi)
