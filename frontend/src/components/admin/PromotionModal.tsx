@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAllMangasAPI } from '../../api/mangaApi';
-import { type Promotion } from '../../api/promotionApi';
 import { FiSearch, FiCheck, FiX, FiLink, FiImage, FiType, FiEye, FiHash } from 'react-icons/fi';
 
 interface PromotionModalProps {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiTrendingUp, FiChevronRight } from 'react-icons/fi';
-import { getPromotionsAPI, type Promotion } from '../../api/promotionApi';
+import { getPromotionsAPI } from '../../api/promotionApi';
 
 const TrendingSide = () => {
     const [trendingItems, setTrendingItems] = useState<Promotion[]>([]);

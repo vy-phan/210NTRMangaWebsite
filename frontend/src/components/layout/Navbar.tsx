@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../config/supabase';
 import { FiSun, FiMoon, FiMenu, FiLogOut, FiEyeOff, FiEye, FiX } from 'react-icons/fi';
-import { getActiveNotificationAPI, type Notification } from '../../api/notificationApi';
+import { getActiveNotificationAPI } from '../../api/notificationApi';
 
 const Navbar = () => {
     const { user, logout: logoutFromStore } = useAuthStore();
