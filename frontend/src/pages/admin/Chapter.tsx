@@ -19,6 +19,9 @@ const ChapterAdmin = () => {
     const sortOrder = (searchParams.get('sort') as 'asc' | 'desc') || 'asc';
     const [showId, setShowId] = useState(false);
 
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkDeleteMode, setIsBulkDeleteMode] = useState<boolean>(false);
+
     // Helper to update URL params
     const updateParams = (updates: Record<string, string | null>) => {
         const newParams = new URLSearchParams(searchParams);
@@ -131,6 +134,47 @@ const ChapterAdmin = () => {
         });
     };
 
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedIds(chapters.map(c => c._id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectRow = (id: string) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedIds.length === 0) return;
+        if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} chương đã chọn và toàn bộ ảnh của chúng?`)) return;
+
+        const chaptersToDelete = chapters.filter(c => selectedIds.includes(c._id));
+
+        const deletePromises = chaptersToDelete.map(async (chapter) => {
+            if (mangaName) {
+                try {
+                    await deleteChapterImagesAPI(mangaName, chapter.number);
+                } catch (error) {
+                    console.error("Lỗi khi xóa ảnh của chương:", error);
+                }
+            }
+            return deleteChapterAPI(chapter._id);
+        });
+
+        toast.promise(Promise.all(deletePromises), {
+            loading: `Đang xóa ${selectedIds.length} chương và dọn dẹp ảnh...`,
+            success: () => {
+                setChapters(prev => prev.filter(c => !selectedIds.includes(c._id)));
+                setSelectedIds([]);
+                setIsBulkDeleteMode(false);
+                return `Xóa ${selectedIds.length} chương thành công!`;
+            },
+            error: 'Lỗi khi xóa hàng loạt chương.',
+        });
+    };
+
     if (isLoading) return <div className="text-center p-8"><span className="loading loading-spinner loading-lg"></span></div>;
 
     return (
@@ -166,6 +210,27 @@ const ChapterAdmin = () => {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    {/* Bật/Tắt chế độ Xóa hàng loạt */}
+                    {isBulkDeleteMode ? (
+                        <button 
+                            className={`btn btn-md font-bold shadow-md animate-in slide-in-from-right-2 ${selectedIds.length > 0 ? 'btn-error text-white' : 'btn-neutral text-neutral-content'}`}
+                            onClick={selectedIds.length > 0 ? handleDeleteSelected : () => setIsBulkDeleteMode(false)}
+                        >
+                            {selectedIds.length > 0 ? (
+                                <><FiTrash2 /> Xóa ({selectedIds.length}) mục</>
+                            ) : (
+                                'Hủy thao tác'
+                            )}
+                        </button>
+                    ) : (
+                        <button 
+                            className="btn btn-outline btn-error btn-md font-bold"
+                            onClick={() => setIsBulkDeleteMode(true)}
+                        >
+                            <FiTrash2 /> Chọn nhiều
+                        </button>
+                    )}
+
                     {/* Nút Sắp xếp */}
                     <select
                         className="select select-bordered select-md"
@@ -196,6 +261,18 @@ const ChapterAdmin = () => {
                     <table className="table w-full">
                         <thead className='bg-base-300'>
                             <tr>
+                                {isBulkDeleteMode && (
+                                <th className="w-10">
+                                    <label>
+                                        <input 
+                                            type="checkbox" 
+                                            className="checkbox" 
+                                            onChange={handleSelectAll}
+                                            checked={chapters.length > 0 && selectedIds.length === chapters.length}
+                                        />
+                                    </label>
+                                </th>
+                                )}
                                 <th>Số Chương</th>
                                 <th>Tiêu đề</th>
                                 <th>Số lượng ảnh</th>
@@ -207,7 +284,19 @@ const ChapterAdmin = () => {
                             {[...chapters]
                                 .sort((a, b) => sortOrder === 'asc' ? a.number - b.number : b.number - a.number)
                                 .map(chapter => (
-                                    <tr key={chapter._id} className='hover'>
+                                    <tr key={chapter._id} className={`hover ${selectedIds.includes(chapter._id) ? 'bg-base-200' : ''}`}>
+                                        {isBulkDeleteMode && (
+                                        <th className="w-10">
+                                            <label>
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="checkbox" 
+                                                    checked={selectedIds.includes(chapter._id)}
+                                                    onChange={() => handleSelectRow(chapter._id)}
+                                                />
+                                            </label>
+                                        </th>
+                                        )}
                                         <td className="font-bold">{chapter.number}</td>
                                         <td>{chapter.title}</td>
                                         <td>{chapter.images.length}</td>

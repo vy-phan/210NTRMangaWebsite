@@ -1,12 +1,5 @@
 import apiClient from "./apiClient";
 
-export interface Notification {
-    _id: string;
-    content: string;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
 
 
 /**

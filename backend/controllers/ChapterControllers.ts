@@ -119,7 +119,7 @@ export const updateChapter = asyncHandler(async (req: Request, res: Response) =>
     }
 
     const updatedChapter = await Chapter.findByIdAndUpdate(id, req.body, { new: true });
-    
+
     // Cập nhật lại thời gian cho Manga 
     if (updatedChapter) {
         await Manga.findByIdAndUpdate(updatedChapter.manga, { updatedAt: new Date() });

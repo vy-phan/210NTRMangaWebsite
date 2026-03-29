@@ -9,6 +9,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area
 } from 'recharts';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface StatCardProps {
   icon: React.ReactElement;
@@ -185,7 +186,7 @@ const Dashboard = () => {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-base-content">Dashboard</h1>
-          <p className="text-base-content/60 mt-2 text-lg">Tổng quan về hệ thống và cộng đồng của bạn.</p>
+          <p className="text-base-content/60 mt-2 text-lg">Tổng quan về hệ thống .</p>
         </div>
         <div className="text-sm font-medium px-4 py-2 bg-base-200 rounded-xl text-base-content/70 shadow-inner">
           Cập nhật lần cuối: {new Date().toLocaleTimeString('vi-VN')}
@@ -371,6 +372,31 @@ const Dashboard = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* --- PHÂN VÙNG CÔNG CỤ HỆ THỐNG (MỚI) --- */}
+      <div className="mt-12 pt-8 border-t border-base-200">
+        <div className="bg-gradient-to-r from-base-200 to-base-100 p-8 rounded-[2rem] border border-base-300 shadow-inner flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <h3 className="text-xl font-bold text-base-content">Công cụ cho Nhà phát triển</h3>
+            <p className="text-sm text-base-content/60 max-w-md">Sử dụng Access Token này để xác thực khi sử dụng các công cụ Python Scraper hoặc API bên ngoài.</p>
+          </div>
+          <button
+            onClick={() => {
+              const token = useAuthStore.getState().token;
+              if (token) {
+                navigator.clipboard.writeText(token);
+                toast.success("Đã sao chép Access Token vào bộ nhớ tạm!");
+              } else {
+                toast.error("Không tìm thấy Access Token. Vui lòng đăng nhập lại.");
+              }
+            }}
+            className="btn btn-primary btn-lg rounded-2xl shadow-lg shadow-primary/20 transition-all gap-3 px-8"
+          >
+            <FiLayers className="w-5 h-5" />
+            Sao chép Access Token
+          </button>
+        </div>
       </div>
     </div>
   );

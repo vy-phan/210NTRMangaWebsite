@@ -1,17 +1,5 @@
 import apiClient from "./apiClient";
 
-export interface Promotion {
-    _id: string;
-    title: string;
-    image: string;
-    link: string;
-    views?: string;
-    active: boolean;
-    priority: number;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
 export const getPromotionsAPI = async (category?: string): Promise<Promotion[]> => {
     try {
         const response = await apiClient.get('/promotions', { params: { category } });

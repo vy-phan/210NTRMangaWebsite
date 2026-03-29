@@ -140,13 +140,25 @@ const Navbar = () => {
 
             {/* --- Banner Thông báo --- */}
             {notification && showNotification && (
-                <div className="bg-accent  text-accent-content px-4 py-2 text-center text-xs md:text-sm font-bold flex items-center justify-center gap-2 sticky top-[64px] z-[40] animate-in slide-in-from-top duration-300">
-                    <span className="flex-1">{notification.content}</span>
+                <div className={`
+                    sticky top-[64px] z-[40] px-4 py-2.5 text-center text-xs md:text-sm font-medium 
+                    flex items-center justify-center gap-2 backdrop-blur-md border-b 
+                    animate-in slide-in-from-top duration-300
+                    ${theme === 'light'
+                        ? 'bg-amber-100/70 border-amber-400/30 text-amber-900 shadow-sm'
+                        : 'bg-yellow-400/10 border-yellow-400/20 text-yellow-200'
+                    }
+                `}>
+                    <span className="flex-1 tracking-wide">{notification.content}</span>
                     <button
                         onClick={() => setShowNotification(false)}
-                        className="btn btn-ghost btn-xs btn-circle text-current hover:bg-black/10"
+                        className={`
+                            p-1.5 rounded-full transition-colors duration-200 flex items-center justify-center
+                            ${theme === 'light' ? 'hover:bg-amber-200/50' : 'hover:bg-yellow-400/20'}
+                        `}
+                        aria-label="Close notification"
                     >
-                        <FiX />
+                        <FiX className="w-4 h-4" />
                     </button>
                 </div>
             )}

@@ -97,6 +97,60 @@ declare global {
         createdAt: string;
         updatedAt: string;
     }
+
+    interface Promotion {
+        _id: string;
+        title: string;
+        image: string;
+        link: string;
+        views?: string;
+        active: boolean;
+        priority: number;
+        createdAt?: string;
+        updatedAt?: string;
+    }
+
+    interface Notification {
+        _id: string;
+        content: string;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string;
+    }
+
+    type ErrorType = 'image_broken' | 'wrong_order' | 'missing_pages' | 'wrong_manga' | 'other';
+    type ReportStatus = 'pending' | 'fixed' | 'rejected';
+
+    interface ChapterReport {
+        _id: string;
+        mangaId: string;
+        chapterId: string;
+        reporter: string | null;
+        errorType: ErrorType;
+        description: string;
+        status: ReportStatus;
+        ipAddress?: string;
+        createdAt: string;
+        updatedAt: string;
+    }
+
+    // Type cho dữ liệu đã populate (Dùng cho Admin)
+    interface PopulatedChapterReport extends Omit<ChapterReport, 'mangaId' | 'chapterId' | 'reporter'> {
+        mangaId: {
+            _id: string;
+            title: string;
+        };
+        chapterId: {
+            _id: string;
+            number: number;
+            title: string;
+        };
+        reporter: {
+            _id: string;
+            displayName: string;
+            email: string;
+        } | null;
+    }
 }
 
 export { };

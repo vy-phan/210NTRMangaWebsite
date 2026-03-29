@@ -9,7 +9,8 @@ import {
   FiX,
   FiGrid,
   FiMonitor,
-  FiBell
+  FiBell,
+  FiFlag
 } from 'react-icons/fi';
 
 const AdminSidebar = () => {
@@ -95,7 +96,10 @@ const AdminSidebar = () => {
                 <FiGrid size={20} />
                 Danh sách Thể loại
               </NavLink>
-              {/* Bạn có thể thêm Quản lý User/Chapter ở đây sau này */}
+              <NavLink to="/admin/reports" className={navLinkClasses} onClick={closeMobileMenu}>
+                <FiFlag size={20} />
+                Danh sách báo cáo lỗi
+              </NavLink>
             </nav>
           </div>
 
@@ -105,6 +109,10 @@ const AdminSidebar = () => {
               Cấu hình & Giao diện
             </p>
             <nav className="space-y-1">
+              <NavLink to="/admin/notifications" className={navLinkClasses} onClick={closeMobileMenu}>
+                <FiBell size={20} />
+                Thông báo
+              </NavLink>
               <NavLink to="/admin/banners" className={navLinkClasses} onClick={closeMobileMenu}>
                 <FiImage size={20} />
                 Banner & Slider
@@ -112,10 +120,6 @@ const AdminSidebar = () => {
               <NavLink to="/admin/promotions" className={navLinkClasses} onClick={closeMobileMenu}>
                 <FiMonitor size={20} />
                 Header Truyện Đề Cử
-              </NavLink>
-              <NavLink to="/admin/notifications" className={navLinkClasses} onClick={closeMobileMenu}>
-                <FiBell size={20} />
-                Thông báo
               </NavLink>
             </nav>
           </div>

@@ -14,6 +14,7 @@ import imageUploadRouter from './routers/ImageUploadRouters';
 import bannerRouter from './routers/BannerRoutes';
 import promotionRouter from './routers/PromotionRoutes';
 import notificationRouter from './routers/NotificationRouters';
+import chapterReportRouter from './routers/ChapterReportRouters';
 import { startKeepAliveJob } from './utils/cronJob';
 
 dotenv.config();
@@ -23,7 +24,7 @@ const PORT = process.env.PORT || 7000;
 
 // CORS Middleware
 const corsOptions = {
-  origin: process.env.CORS_ORIGINS || 'http://localhost:5173',
+  origin: process.env.CORS_ORIGINS || 'http://localhost:5170',
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -41,6 +42,7 @@ app.use('/api/images', imageUploadRouter);
 app.use('/api/banners', bannerRouter);
 app.use('/api/promotions', promotionRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/reports', chapterReportRouter);
 
 // Serve Frontend in Production
 if (process.env.NODE_ENV === 'production') {
