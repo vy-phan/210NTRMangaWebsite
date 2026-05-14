@@ -4,6 +4,13 @@ import time
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 import threading
+import ctypes
+
+# Hỗ trợ hiển thị sắc nét trên Windows (High DPI)
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)
+except Exception:
+    pass
 
 class DamCoNuongScraper:
     def __init__(self, log_callback):
@@ -77,7 +84,7 @@ class MangaUploaderApp:
         ttk.Label(config_frame, text="Backend URL:").grid(row=1, column=0, sticky="w", pady=5)
         url_options =[
             "https://ntrmanga.onrender.com/api/chapters",
-            "http://localhost:5000/api/chapters"
+            "http://localhost:7000/api/chapters"
         ]
         url_combo = ttk.Combobox(config_frame, textvariable=self.backend_url_var, values=url_options, width=47)
         url_combo.grid(row=1, column=1, pady=5)
@@ -102,9 +109,17 @@ class MangaUploaderApp:
         ttk.Label(scrape_frame, text="Chương Kết Thúc:").grid(row=1, column=2, sticky="w", pady=5, padx=(10, 0))
         ttk.Entry(scrape_frame, textvariable=self.end_idx_var, width=15).grid(row=1, column=3, pady=5, sticky="w")
 
+        # Frame chứa các nút điều khiển
+        button_frame = ttk.Frame(self.root)
+        button_frame.pack(pady=15)
+
         # Nút Bắt đầu
-        self.start_btn = ttk.Button(self.root, text="🚀 BẮT ĐẦU CHẠY", command=self.start_process)
-        self.start_btn.pack(pady=10)
+        self.start_btn = ttk.Button(button_frame, text="🚀 BẮT ĐẦU CHẠY", command=self.start_process)
+        self.start_btn.pack(side="left", padx=5)
+
+        # Nút Xóa Log
+        self.clear_btn = ttk.Button(button_frame, text="🧹 XÓA LOG", command=self.clear_log)
+        self.clear_btn.pack(side="left", padx=5)
 
         # Khung Log hiển thị tiến trình
         ttk.Label(self.root, text="Log Hoạt Động:").pack(anchor="w")
@@ -119,6 +134,12 @@ class MangaUploaderApp:
         self.log_text.config(state='normal')
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
+        self.log_text.config(state='disabled')
+
+    def clear_log(self):
+        """Xóa toàn bộ nội dung trong khung Log"""
+        self.log_text.config(state='normal')
+        self.log_text.delete('1.0', tk.END)
         self.log_text.config(state='disabled')
 
     def start_process(self):

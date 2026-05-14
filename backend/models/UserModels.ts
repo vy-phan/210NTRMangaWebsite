@@ -1,11 +1,9 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    supabaseId: {
+    password: {
         type: String,
-        required: true,
-        unique: true,
-        index: true,
+        required: true  // sẽ gây lỗi cho 2 user cũ, nên để optional hoặc tự add password cho họ sau đó set lại required
     },
     email: {
         type: String,
@@ -26,10 +24,6 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
-    providers: {
-        type: String,
-        enum: ['google', 'discord'],
-    }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

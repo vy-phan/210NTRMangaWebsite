@@ -1,19 +1,15 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
-import { supabase } from '../config/supabase';
 import { toast } from 'react-hot-toast';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL + '/api', 
+  baseURL: import.meta.env.VITE_API_BASE_URL + '/api',
+  withCredentials: true,
 });
 
-// Interceptor cho Request (gửi token đi)
+// Interceptor cho Request (không cần gửi Authorization header nữa vì dùng cookie)
 apiClient.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -35,7 +31,6 @@ apiClient.interceptors.response.use(
       }
       
       // Đăng xuất người dùng
-      await supabase.auth.signOut();
       logout();
       
     }

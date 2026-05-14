@@ -51,14 +51,24 @@ declare global {
 
     interface UserProfile {
         _id: string;
-        supabaseId: string;
         email: string;
         displayName: string;
         avatarUrl?: string;
         role: 'user' | 'admin';
-        providers?: 'google' | 'discord';
+        token?: string;
         createdAt: string;
         updatedAt: string;
+    }
+
+    interface LoginCredentials {
+        email: string;
+        password: string;
+    }
+
+    interface RegisterData {
+        email: string;
+        password: string;
+        displayName: string;
     }
 
     interface UpdateUserProfileData {

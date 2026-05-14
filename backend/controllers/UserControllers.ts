@@ -1,57 +1,100 @@
 import { Request, Response } from 'express';
+import { generateToken } from '../utils/generateToken';
 import asyncHandler from 'express-async-handler';
 import User from '../models/UserModels';
-import { supabase } from '../config/supabase';
+import bcrypt from 'bcryptjs';
 
-export const syncUserProfile = asyncHandler(async (req: Request, res: Response) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401);
-        throw new Error("Authorization token is missing or malformed");
+export const registerUser = asyncHandler(async (req: Request, res: Response) => {
+    const { email, password, displayName } = req.body;
+
+    if (!email || !password || !displayName) {
+        res.status(400);
+        throw new Error('Please add all fields');
     }
 
-    const token = authHeader.split(' ')[1];
+    const userExists = await User.findOne({ email });
 
-    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser(token);
-
-    if (error || !supabaseUser) {
-        res.status(401);
-        throw new Error("Invalid Supabase user or token");
+    if (userExists) {
+        res.status(400);
+        throw new Error('User already exists');
     }
 
-    const { id: supabaseId, email, user_metadata, app_metadata } = supabaseUser;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    const displayName = user_metadata.full_name || user_metadata.user_name || 'Anonymous';
-    const avatarUrl = user_metadata.avatar_url || '';
-    const provider = app_metadata.provider;
+    const user = await User.create({
+        displayName,
+        email,
+        password: hashedPassword,
+        role: 'user',
+    });
 
-    const user = await User.findOneAndUpdate(
-        { supabaseId: supabaseId },
-        {
-            // $set: Chỉ cập nhật những trường cần đồng bộ liên tục (như Email, Provider)
-            // Nếu user đăng nhập lại, ta KHÔNG muốn ghi đè tên/ảnh custom của họ
-            $set: {
-                email: email,
-                providers: provider,
-            },
-            
-            // $setOnInsert: Chỉ chạy KHI TẠO MỚI user lần đầu tiên
-            // Lúc này mới lấy tên/ảnh từ Google/Discord làm mặc định
-            $setOnInsert: {
-                supabaseId: supabaseId,
-                role: 'user',
-                displayName: displayName, 
-                avatarUrl: avatarUrl,     
+    if (user) {
+        const token = generateToken(user._id.toString());
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        });
+
+        res.status(201).json({
+            success: true,
+            data: {
+                _id: user.id,
+                displayName: user.displayName,
+                email: user.email,
+                role: user.role,
+                avatarUrl: user.avatarUrl,
+                token: token,
             }
-        },
-        {
-            new: true,
-            upsert: true,
-            select: '-__v'
-        }
-    );
+        });
+    } else {
+        res.status(400);
+        throw new Error('Invalid user data');
+    }
+});
 
-    res.status(200).json({ success: true, data: user });
+export const loginUser = asyncHandler(async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    // Trim email và tìm kiếm không phân biệt hoa thường
+    const trimmedEmail = email ? email.trim() : '';
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${trimmedEmail}$`, 'i') } });
+
+    // Cần check user.password vì user cũ có thể chưa có password
+    if (user && user.password && (await bcrypt.compare(password, user.password))) {
+        const token = generateToken(user._id.toString());
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+
+        res.json({
+            success: true,
+            data: {
+                _id: user.id,
+                displayName: user.displayName,
+                email: user.email,
+                role: user.role,
+                avatarUrl: user.avatarUrl,
+                token: token,
+            }
+        });
+    } else {
+        res.status(401);
+        throw new Error('Invalid email or password. If you are an old user, please contact admin to set a password.');
+    }
+});
+
+export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+    res.cookie('token', '', {
+        httpOnly: true,
+        expires: new Date(0),
+    });
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
 });
 
 export const getCurrentUserProfile = asyncHandler(async (req: Request, res: Response) => {
@@ -80,11 +123,11 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
 
     if (!currentUser || !currentUser._id) {
         res.status(401).json({ success: false, message: "Unauthorized: User authentication required" });
-        return; 
+        return;
     }
 
     const { displayName, avatarUrl } = req.body;
-    
+
     // Object chứa các trường cần update
     const updateData: { displayName?: string; avatarUrl?: string } = {};
 
@@ -111,9 +154,9 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
     // 4. Kiểm tra xem có gì để update không
     // Nếu client gửi body rỗng {} hoặc gửi các field không hợp lệ -> Báo lỗi
     if (Object.keys(updateData).length === 0) {
-        res.status(400).json({ 
-            success: false, 
-            message: "No valid fields provided. Please provide 'displayName' or 'avatarUrl'" 
+        res.status(400).json({
+            success: false,
+            message: "No valid fields provided. Please provide 'displayName' or 'avatarUrl'"
         });
         return;
     }
@@ -122,7 +165,7 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
     const updatedUser = await User.findByIdAndUpdate(
         currentUser._id,
         { $set: updateData }, // Chỉ update những field có trong updateData
-        { 
+        {
             new: true,           // Trả về dữ liệu mới sau khi sửa
             runValidators: true, // Chạy validate của Mongoose schema
             select: '-__v'       // Bỏ field version key
@@ -135,8 +178,8 @@ export const updateUserProfile = asyncHandler(async (req: Request, res: Response
     }
 
     // 6. Trả về kết quả thành công
-    res.status(200).json({ 
-        success: true, 
-        data: updatedUser 
+    res.status(200).json({
+        success: true,
+        data: updatedUser
     });
 });

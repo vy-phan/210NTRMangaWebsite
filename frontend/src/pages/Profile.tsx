@@ -23,24 +23,24 @@ const Profile = () => {
 
     try {
       const updateData: { avatarUrl?: string; displayName?: string } = {};
-      
+
       if (newAvatarUrl !== user.avatarUrl) updateData.avatarUrl = newAvatarUrl;
       if (newDisplayName !== user.displayName) updateData.displayName = newDisplayName;
 
 
       if (Object.keys(updateData).length === 0) {
-         setIsUpdating(false);
-         return;
+        setIsUpdating(false);
+        return;
       }
 
 
       await updateUserProfileAPI(updateData);
       const freshUserData = await getCurrentUserAPI();
       const mergedUser = {
-          ...user, 
-          displayName: freshUserData.displayName,
-          avatarUrl: freshUserData.avatarUrl,
-          updatedAt: freshUserData.updatedAt 
+        ...user,
+        displayName: freshUserData.displayName,
+        avatarUrl: freshUserData.avatarUrl,
+        updatedAt: freshUserData.updatedAt
       };
 
       setUser(mergedUser, token);
@@ -76,19 +76,19 @@ const Profile = () => {
     <div className="bg-base-200 min-h-screen p-4 md:p-8">
       {/* Overlay Loading */}
       {isUpdating && (
-          <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
-          </div>
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+        </div>
       )}
 
       <div className="container mx-auto max-w-2xl">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body items-center text-center">
-            
+
             {/* Avatar */}
             <div className="avatar mb-4">
               <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4">
-                <img 
+                <img
                   src={user.avatarUrl ? user.avatarUrl : `https://ui-avatars.com/api/?name=${user.displayName}`}
                   alt="User Avatar"
                   referrerPolicy="no-referrer"
@@ -103,20 +103,16 @@ const Profile = () => {
                 <FiShield size={12} /> Quản trị viên
               </div>
             )}
-             {user.role === 'user' && (
+            {user.role === 'user' && (
               <div className="badge badge-ghost">Thành viên</div>
             )}
-            
+
             <div className="divider my-6">Thông tin chi tiết</div>
 
             <div className="w-full text-left space-y-3">
               <div className="flex justify-between">
                 <span className="text-base-content/70">Email:</span>
                 <span className="font-semibold">{user.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-base-content/70">Nhà cung cấp:</span>
-                <span className="font-semibold capitalize">{user.providers}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-base-content/70">Ngày tham gia:</span>
@@ -127,10 +123,10 @@ const Profile = () => {
                 </span>
               </div>
             </div>
-            
+
             <div className="card-actions justify-center mt-8">
-              <button 
-                onClick={handleOpenModal} 
+              <button
+                onClick={handleOpenModal}
                 className="btn btn-outline"
                 disabled={isUpdating}
               >
@@ -141,7 +137,7 @@ const Profile = () => {
         </div>
       </div>
 
-      <AvatarSelectionModal 
+      <AvatarSelectionModal
         modalRef={modalRef}
         currentAvatar={user.avatarUrl || ''}
         currentName={user.displayName || ''}

@@ -4,6 +4,7 @@ import { FiTrash2, FiCheckCircle, FiXCircle, FiClock, FiSearch, FiExternalLink }
 import { getAllReportsAPI, updateReportStatusAPI, deleteReportAPI } from '../../api/chapterReportApi';
 import { useSearchParams, Link } from 'react-router-dom';
 import { formatSmartTime } from '../../utils/dateFomat';
+import { slugify } from '../../utils/slugify';
 
 const ReportAdmin = () => {
     const [reports, setReports] = useState<PopulatedChapterReport[]>([]);
@@ -39,7 +40,7 @@ const ReportAdmin = () => {
             const matchesStatus = filterStatus ? report.status === filterStatus : true;
             const matchesType = filterType ? report.errorType === filterType : true;
             const matchesSearch = searchTerm
-                ? report.mangaId?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                ? (report.mangaId?.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
                 report.description.toLowerCase().includes(searchTerm.toLowerCase())
                 : true;
             return matchesStatus && matchesType && matchesSearch;
@@ -249,10 +250,10 @@ const ReportAdmin = () => {
                                         </th>
                                     )}
                                     <td>
-                                        <div className="font-bold text-primary">{report.mangaId?.title || 'N/A'}</div>
-                                        <div className="text-xs opacity-70">Chương {report.chapterId.title}</div>
+                                        <div className="font-bold text-primary">{report.mangaId?.title || 'Truyện đã bị xóa'}</div>
+                                        <div className="text-xs opacity-70">Chương {report.chapterId?.title || 'N/A'}</div>
                                         <Link
-                                            to={`/manga/${report.mangaId?.title?.toLowerCase().replace(/ /g, '-')}/chapter/${report.chapterId?.number + 1}`}
+                                            to={`/manga/${slugify(report.mangaId?.title || 'unknown')}/chapter/${(report.chapterId?.number || 0) + 1}`}
                                             target="_blank"
                                             className="text-[10px] link link-info flex items-center gap-1 mt-1"
                                         >

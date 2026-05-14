@@ -26,7 +26,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'CacheFirst',
+            handler: 'StaleWhileRevalidate', // Thay CacheFirst bằng StaleWhileRevalidate để linh hoạt hơn khi lỗi mạng
 
             options: {
               cacheName: 'images-cache',
@@ -57,10 +57,6 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('recharts')) {
               return 'recharts';
-            }
-
-            if (id.includes('@supabase')) {
-              return 'supabase';
             }
             return 'vendor';
           }

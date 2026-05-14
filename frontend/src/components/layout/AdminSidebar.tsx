@@ -10,7 +10,8 @@ import {
   FiGrid,
   FiMonitor,
   FiBell,
-  FiFlag
+  FiFlag,
+  FiSettings
 } from 'react-icons/fi';
 
 const AdminSidebar = () => {
@@ -78,6 +79,10 @@ const AdminSidebar = () => {
               <NavLink to="/admin" end className={navLinkClasses} onClick={closeMobileMenu}>
                 <FiHome size={20} />
                 Dashboard
+              </NavLink>
+              <NavLink to="/admin/settings" className={navLinkClasses} onClick={closeMobileMenu}>
+                <FiSettings size={20} />
+                Cài đặt
               </NavLink>
             </nav>
           </div>

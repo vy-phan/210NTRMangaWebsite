@@ -1,24 +1,39 @@
 import apiClient from "./apiClient";
 
 
-export const syncUserProfileAPI = async (token: string): Promise<UserProfile> => {
+export const loginAPI = async (data: LoginCredentials): Promise<UserProfile> => {
     try {
-        const response = await apiClient.post('/users/sync', 
-            {},
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
-        
+        const response = await apiClient.post('/users/login', data);
         if (response.data && response.data.success) {
             return response.data.data;
         } else {
-            throw new Error(response.data.message || 'Failed to sync user profile');
+            throw new Error(response.data.message || 'Failed to login');
         }
     } catch (error) {
-        console.error("Error syncing user profile:", error);
+        console.error("Error logging in:", error);
+        throw error;
+    }
+};
+
+export const registerAPI = async (data: RegisterData): Promise<UserProfile> => {
+    try {
+        const response = await apiClient.post('/users/register', data);
+        if (response.data && response.data.success) {
+            return response.data.data;
+        } else {
+            throw new Error(response.data.message || 'Failed to register');
+        }
+    } catch (error) {
+        console.error("Error registering:", error);
+        throw error;
+    }
+};
+
+export const logoutAPI = async (): Promise<void> => {
+    try {
+        await apiClient.post('/users/logout');
+    } catch (error) {
+        console.error("Error logging out:", error);
         throw error;
     }
 };

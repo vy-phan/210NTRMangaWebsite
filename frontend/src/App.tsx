@@ -38,6 +38,7 @@ import AdminRouteGuard from './components/auth/AdminRouteGuard';
 import AuthRouteGuard from './components/auth/AuthRouteGuard';
 import { useNetworkStatus } from './hook/useNetworkStatus';
 import { FiWifiOff, FiX } from 'react-icons/fi';
+import SettingsAdmin from './pages/admin/SettingsAdmin';
 
 
 const LoadingFallback = () => (
@@ -106,6 +107,7 @@ const App = () => {
               <Route element={<AdminRouteGuard />}>
                 <Route path="/admin" element={<LayoutAdmin />}>
                   <Route index element={<Dashboard />} />
+                  <Route path="settings" element={<SettingsAdmin />} />
                   <Route path="banners" element={<BannerAdmin />} />
                   <Route path="promotions" element={<PromotionAdmin />} />
                   <Route path="mangas" element={<MangaAdmin />} />

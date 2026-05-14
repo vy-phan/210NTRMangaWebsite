@@ -1,30 +1,38 @@
-import { FcGoogle } from 'react-icons/fc';
-import { FaDiscord } from 'react-icons/fa';
-import { supabase } from '../config/supabase';
-import toast from 'react-hot-toast';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { loginAPI, registerAPI } from '../api/authApi';
+import { useAuthStore } from '../store/useAuthStore';
+import toast from 'react-hot-toast';
 
 const Login = () => {
-    const [loadingProvider, setLoadingProvider] = useState<'google' | 'discord' | null>(null);
+    const [isLoginMode, setIsLoginMode] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [displayName, setDisplayName] = useState('');
+    const navigate = useNavigate();
+    const { setUser } = useAuthStore();
 
-    const handleLogin = async (provider: 'google' | 'discord') => {
-        setLoadingProvider(provider);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
         try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: provider,
-                options: {
-                    redirectTo: window.location.origin,
-                },
-            });
-
-            if (error) {
-                throw error;
+            if (isLoginMode) {
+                const user = await loginAPI({ email, password });
+                setUser(user, user.token || null);
+                toast.success(`Chào mừng trở lại, ${user.displayName}!`);
+                navigate('/');
+            } else {
+                const user = await registerAPI({ email, password, displayName });
+                setUser(user, user.token || null);
+                toast.success(`Đăng ký thành công, chào mừng ${user.displayName}!`);
+                navigate('/');
             }
         } catch (error: any) {
-            console.error(`Error logging in with ${provider}:`, error);
-            toast.error(error.message || `Đăng nhập với ${provider} thất bại.`);
-            setLoadingProvider(null);
+            toast.error(error.message || 'Có lỗi xảy ra.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -59,40 +67,77 @@ const Login = () => {
                         
                         {/* Header của form */}
                         <div className="mb-8 text-center lg:text-left">
-                            <h1 className="text-3xl font-extrabold text-base-content mb-2">Chào mừng trở lại! 👋</h1>
+                            <h1 className="text-3xl font-extrabold text-base-content mb-2">
+                                {isLoginMode ? 'Chào mừng trở lại! 👋' : 'Tạo tài khoản mới'}
+                            </h1>
                             <p className="text-base-content/60">
-                                Vui lòng đăng nhập bằng tài khoản của bạn.
+                                {isLoginMode ? 'Vui lòng đăng nhập bằng tài khoản của bạn.' : 'Điền thông tin để đăng ký.'}
                             </p>
                         </div>
 
-                        {/* Các nút đăng nhập */}
-                        <div className="flex flex-col gap-4">
-                            {/* Nút Google */}
-                            <button
-                                onClick={() => handleLogin('google')}
-                                className="btn btn-lg w-full bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-300 shadow-sm transition-all duration-300 transform hover:-translate-y-1"
-                                disabled={!!loadingProvider}
-                            >
-                                {loadingProvider === 'google' ? (
-                                    <span className="loading loading-spinner text-primary"></span>
-                                ) : (
-                                    <FcGoogle className="text-2xl" />
-                                )}
-                                <span className="flex-grow text-center font-semibold">Đăng nhập với Google</span>
-                            </button>
+                        {/* Form đăng nhập / đăng ký */}
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                            {!isLoginMode && (
+                                <div className="form-control">
+                                    <label className="label">
+                                        <span className="label-text font-medium">Tên hiển thị</span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Nhập tên hiển thị" 
+                                        className="input input-bordered w-full" 
+                                        value={displayName}
+                                        onChange={(e) => setDisplayName(e.target.value)}
+                                        required={!isLoginMode}
+                                    />
+                                </div>
+                            )}
 
-                            {/* Nút Discord */}
+                            <div className="form-control">
+                                <label className="label">
+                                    <span className="label-text font-medium">Email</span>
+                                </label>
+                                <input 
+                                    type="email" 
+                                    placeholder="email@example.com" 
+                                    className="input input-bordered w-full" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-control">
+                                <label className="label">
+                                    <span className="label-text font-medium">Mật khẩu</span>
+                                </label>
+                                <input 
+                                    type="password" 
+                                    placeholder="••••••••" 
+                                    className="input input-bordered w-full" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+
                             <button
-                                onClick={() => handleLogin('discord')}
-                                className="btn btn-lg w-full bg-[#5865F2] text-white hover:bg-[#4752C4] border-none shadow-md shadow-[#5865F2]/30 transition-all duration-300 transform hover:-translate-y-1"
-                                disabled={!!loadingProvider}
+                                type="submit"
+                                className="btn btn-primary w-full mt-4"
+                                disabled={loading}
                             >
-                                {loadingProvider === 'discord' ? (
-                                    <span className="loading loading-spinner text-white"></span>
-                                ) : (
-                                    <FaDiscord className="text-2xl" />
-                                )}
-                                <span className="flex-grow text-center font-semibold">Đăng nhập với Discord</span>
+                                {loading && <span className="loading loading-spinner"></span>}
+                                {isLoginMode ? 'Đăng nhập' : 'Đăng ký'}
+                            </button>
+                        </form>
+
+                        <div className="mt-4 text-center text-sm">
+                            <button 
+                                type="button"
+                                onClick={() => setIsLoginMode(!isLoginMode)}
+                                className="link link-hover text-primary font-medium"
+                            >
+                                {isLoginMode ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập'}
                             </button>
                         </div>
 
@@ -108,7 +153,7 @@ const Login = () => {
 
                         {/* Footer Link */}
                         <div className="text-center text-sm text-base-content/60">
-                            Chưa muốn đăng nhập ngay? <Link to="/" className="link link-primary font-semibold hover:underline">Về trang chủ</Link>
+                            Chưa muốn tham gia ngay? <Link to="/" className="link link-primary font-semibold hover:underline">Về trang chủ</Link>
                         </div>
                     </div>
                 </div>

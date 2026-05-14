@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
-import { supabase } from '../../config/supabase';
 import { FiSun, FiMoon, FiMenu, FiLogOut, FiEyeOff, FiEye, FiX } from 'react-icons/fi';
 import { getActiveNotificationAPI } from '../../api/notificationApi';
+import { logoutAPI } from '../../api/authApi';
 
 const Navbar = () => {
     const { user, logout: logoutFromStore } = useAuthStore();
@@ -11,6 +11,8 @@ const Navbar = () => {
     const [isHidden, setIsHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
     const [notification, setNotification] = useState<Notification | null>(null);
     const [showNotification, setShowNotification] = useState(true);
+    const location = useLocation();
+    const isAdminRoute = location.pathname.startsWith('/admin');
 
 
     useEffect(() => {
@@ -42,8 +44,13 @@ const Navbar = () => {
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        logoutFromStore();
+        try {
+            await logoutAPI();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            logoutFromStore();
+        }
     };
 
     const navLinks = (
@@ -139,7 +146,7 @@ const Navbar = () => {
             </header>
 
             {/* --- Banner Thông báo --- */}
-            {notification && showNotification && (
+            {notification && showNotification && !isAdminRoute && (
                 <div className={`
                     sticky top-[64px] z-[40] px-4 py-2.5 text-center text-xs md:text-sm font-medium 
                     flex items-center justify-center gap-2 backdrop-blur-md border-b 
