@@ -12,7 +12,7 @@ interface AvatarSelectionModalProps {
 
 const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: AvatarSelectionModalProps) => {
     const avatarList = Array.from({ length: TOTAL_AVATARS }, (_, i) => `/avatar/${i + 1}.webp`);
-    
+
     // State quản lý Avatar và Tên hiển thị
     const [selectedAvatar, setSelectedAvatar] = useState<string>('');
     const [name, setName] = useState<string>('');
@@ -25,7 +25,7 @@ const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: 
         } else {
             setSelectedAvatar('');
         }
-        
+
         // Reset Tên
         setName(currentName || '');
     }, [currentAvatar, currentName]);
@@ -57,10 +57,10 @@ const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: 
                             <FiUser /> Tên hiển thị
                         </span>
                     </label>
-                    <input 
-                        type="text" 
-                        placeholder="Nhập tên hiển thị mới..." 
-                        className="input input-bordered w-full" 
+                    <input
+                        type="text"
+                        placeholder="Nhập tên hiển thị mới..."
+                        className="input input-bordered w-full"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                     />
@@ -76,8 +76,8 @@ const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: 
                             onClick={() => setSelectedAvatar(url)}
                             className={`
                                 cursor-pointer rounded-full p-1 transition-all duration-200 relative group
-                                ${selectedAvatar === url 
-                                    ? 'ring-4 ring-primary scale-105' 
+                                ${selectedAvatar === url
+                                    ? 'ring-4 ring-primary scale-105'
                                     : 'hover:scale-105 hover:ring-2 hover:ring-base-300 opacity-80 hover:opacity-100'}
                             `}
                         >
@@ -86,7 +86,7 @@ const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: 
                                     <img src={url} alt={`Avatar ${index + 1}`} loading="lazy" />
                                 </div>
                             </div>
-                            
+
                             {/* Dấu tích xanh khi được chọn */}
                             {selectedAvatar === url && (
                                 <div className="absolute top-0 right-0 bg-primary text-white rounded-full p-1 shadow-md">
@@ -105,8 +105,8 @@ const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: 
                     <button className="btn btn-ghost" onClick={handleClose}>
                         <FiX /> Hủy
                     </button>
-                    <button 
-                        className="btn btn-primary" 
+                    <button
+                        className="btn btn-primary"
                         onClick={handleConfirm}
                         disabled={!name.trim()} // Không cho lưu nếu tên rỗng
                     >

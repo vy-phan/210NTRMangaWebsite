@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { formatTimeAgo } from '../../utils/dateFomat';
 import { useImageLoader } from '../../utils/useImageLoader';
 import { useHistoryStore } from '../../store/useHistoryStore';
+import { ASSETS } from '../../constants/assets';
 
 interface MangaCardProps {
   manga: Manga;
@@ -12,7 +13,7 @@ const MangaCard = ({ manga }: MangaCardProps) => {
   const latestChapTime = manga.latestChapters?.[0]?.createdAt;
   const displayTime = formatTimeAgo(latestChapTime || manga.updatedAt || manga.createdAt);
 
-  const { imageSrc, isLoading } = useImageLoader(manga.poster!, '/place-doro.webp');
+  const { imageSrc, isLoading } = useImageLoader(manga.poster!, ASSETS.DEFAULT_COVER);
   const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
 
   const { addToHistory } = useHistoryStore();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaSearch, FaList, FaDownload, FaHistory } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { ASSETS } from "../../constants/assets";
 
 const Footer = () => {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
@@ -25,7 +26,7 @@ const Footer = () => {
                         <div className="flex items-center gap-3">
                             <Link to="/" className="btn btn-ghost p-0 h-auto min-h-0 hover:bg-transparent">
                                 <img
-                                    src={theme === 'light' ? '/logoLight.png' : '/logoNight.png'}
+                                    src={theme === 'light' ? ASSETS.LOGO_LIGHT : ASSETS.LOGO_NIGHT}
                                     alt="210 NTR Manga"
                                     className="h-12 md:h-16 w-auto object-contain transition-transform duration-300 hover:scale-105"
                                 />

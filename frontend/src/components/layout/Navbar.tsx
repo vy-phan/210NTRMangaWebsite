@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { FiSun, FiMoon, FiMenu, FiLogOut, FiEyeOff, FiEye, FiX } from 'react-icons/fi';
 import { getActiveNotificationAPI } from '../../api/notificationApi';
 import { logoutAPI } from '../../api/authApi';
+import { ASSETS } from '../../constants/assets';
 
 const Navbar = () => {
     const { user, logout: logoutFromStore } = useAuthStore();
@@ -77,7 +78,7 @@ const Navbar = () => {
                     <Link to="/" className="btn btn-ghost p-1 h-auto min-h-0 hover:bg-transparent">
                         <img
                             // Logic đổi ảnh theo theme
-                            src={theme === 'light' ? '/logoLight.png' : '/logoNight.png'}
+                            src={theme === 'light' ? ASSETS.LOGO_LIGHT : ASSETS.LOGO_NIGHT}
                             alt="210 NTR Manga"
                             className="h-10 md:h-14 md:pl-20 w-auto object-contain transition-all duration-300"
                         />
@@ -113,7 +114,7 @@ const Navbar = () => {
                                     <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                                         <img
                                             alt="User Avatar"
-                                            src={user.avatarUrl ? user.avatarUrl : `https://ui-avatars.com/api/?name=${user.displayName}`}
+                                            src={user.avatarUrl ? user.avatarUrl : ASSETS.DEFAULT_AVATAR(user.displayName)}
                                             referrerPolicy="no-referrer"
                                         />
                                     </div>

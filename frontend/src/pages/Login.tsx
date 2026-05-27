@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginAPI, registerAPI } from '../api/authApi';
+import { ASSETS } from '../constants/assets';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 
@@ -44,7 +45,7 @@ const Login = () => {
                 <div className="relative hidden lg:block h-full">
                     {/* Ảnh nền */}
                     <img 
-                        src="/cover.png" 
+                        src={ASSETS.AUTH_COVER} 
                         alt="Login Cover" 
                         className="absolute inset-0 w-full h-full object-cover"
                     />

@@ -10,15 +10,35 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favico.svg', 'logoLight.png', 'logoNight.png'],
       manifest: {
-        name: 'Manga Reader Offline',
-        short_name: 'MangaApp',
+        name: '210 NTR Manga Offline',
+        short_name: '210NTRManga',
         description: 'Đọc truyện tranh offline',
         theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
+        orientation: 'portrait',
         icons: [
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' }
+          {
+            src: 'logoLight.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'logoLight.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'logoLight.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
         ]
       },
       workbox: {
