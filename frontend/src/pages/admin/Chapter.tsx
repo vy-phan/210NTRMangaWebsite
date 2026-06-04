@@ -16,7 +16,7 @@ const ChapterAdmin = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const sortOrder = (searchParams.get('sort') as 'asc' | 'desc') || 'asc';
+    const sortOrder = (searchParams.get('sort') as 'asc' | 'desc') || 'desc';
     const [showId, setShowId] = useState(false);
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -237,8 +237,8 @@ const ChapterAdmin = () => {
                         value={sortOrder}
                         onChange={(e) => updateParams({ sort: e.target.value })}
                     >
-                        <option value="asc">Sắp xếp: Từ đầu</option>
                         <option value="desc">Sắp xếp: Mới nhất</option>
+                        <option value="asc">Sắp xếp: Từ đầu</option>
                     </select>
 
                     <div className="divider divider-horizontal mx-0 hidden lg:flex"></div>
