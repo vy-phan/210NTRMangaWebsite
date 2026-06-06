@@ -30,7 +30,7 @@ const OfflinePage = () => {
     const [storage, setStorage] = useState<StorageInfo>({ usage: 0, quota: 0, imageCount: 0 });
 
     // Giới hạn số lượng ảnh (cần khớp với vite.config.ts)
-    const MAX_IMAGE_LIMIT = 5000;
+    const MAX_IMAGE_LIMIT = 1000;
 
     const handleClearAll = async () => {
         if (!window.confirm("Hành động này sẽ xóa toàn bộ truyện đã tải và đưa ứng dụng về trạng thái ban đầu. Bạn có chắc không?")) return;

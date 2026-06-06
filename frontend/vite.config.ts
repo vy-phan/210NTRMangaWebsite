@@ -46,17 +46,16 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'StaleWhileRevalidate', // Thay CacheFirst bằng StaleWhileRevalidate để linh hoạt hơn khi lỗi mạng
+            handler: 'StaleWhileRevalidate',
 
             options: {
               cacheName: 'images-cache',
               expiration: {
-                maxEntries: 5000, // Lưu tối đa 5000 ảnh
-                maxAgeSeconds: 60 * 24 * 60 * 60, // 60 ngày
+                maxEntries: 1000, // Giảm từ 5000 xuống 500 ảnh để không chiếm quá nhiều dung lượng
+                maxAgeSeconds: 7 * 24 * 60 * 60, // Giảm từ 60 ngày xuống 7 ngày (1 tuần)
               },
-              // QUAN TRỌNG NHẤT:
-              // status 0: Là ảnh từ domain khác bị CORS (Opaque Response)
-              // status 200: Là ảnh bình thường
+              // Vẫn cache status 0 (opaque responses) để ảnh cross-origin vẫn offline được
+              // Nhưng đã giảm maxEntries và maxAgeSeconds để kiểm soát dung lượng
               cacheableResponse: {
                 statuses: [0, 200],
               },

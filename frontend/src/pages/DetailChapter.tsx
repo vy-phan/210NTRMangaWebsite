@@ -211,8 +211,8 @@ const DetailChapter = () => {
             disabled={isOfflineMode && chapterList.length === 0}
           >
             {chapterList.length > 0 ? (
-              chapterList.map((chap, index) => (
-                <option key={chap._id} value={index + 1}>
+              chapterList.map((chap) => (
+                <option key={chap._id} value={chap.number + 1}>
                   Chương {chap.title}
                 </option>
               ))
