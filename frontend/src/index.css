@@ -72,3 +72,17 @@ body {
 .no-bounce {
     overscroll-behavior: none;
 }
+
+/* --- TỐI ƯU ẢNH CHO iPHONE */
+img {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+/* Tối ưu performance cho scroll */
+.scroll-container {
+    -webkit-overflow-scrolling: touch;
+}
