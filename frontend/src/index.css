@@ -61,3 +61,14 @@
 html {
     scroll-behavior: smooth;
 }
+
+/* --- VÔ HIỆU HÓA PULL-TO-REFRESH TRÊN iOS --- */
+body {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ngăn chặn bounce scroll trên iOS */
+.no-bounce {
+    overscroll-behavior: none;
+}

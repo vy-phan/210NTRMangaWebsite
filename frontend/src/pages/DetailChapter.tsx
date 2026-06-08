@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChapterByNumberAPI, getChaptersByMangaIdAPI } from '../api/chapterApi';
@@ -76,6 +76,26 @@ const DetailChapter = () => {
       if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
     };
   }, [isAutoScrolling, scrollDelay]);
+
+  // === TỰ ĐỘNG DỪNG AUTO SCROLL KHI NGƯỜI DÙNG SCROLL THỦ CÔNG ===
+  const handleUserScroll = useCallback(() => {
+    if (isAutoScrolling) {
+      setIsAutoScrolling(false);
+    }
+  }, [isAutoScrolling]);
+
+  useEffect(() => {
+    // Lắng nghe các sự kiện scroll, touch, mouse
+    window.addEventListener('scroll', handleUserScroll, { passive: true });
+    window.addEventListener('touchmove', handleUserScroll, { passive: true });
+    window.addEventListener('mousemove', handleUserScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleUserScroll);
+      window.removeEventListener('touchmove', handleUserScroll);
+      window.removeEventListener('mousemove', handleUserScroll);
+    };
+  }, [handleUserScroll]);
 
   // Reset Auto Scroll khi chuyển chương mới
   useEffect(() => {
@@ -197,7 +217,7 @@ const DetailChapter = () => {
   }
 
   return (
-    <div className="bg-base-300 text-base-content min-h-screen relative">
+    <div className="bg-base-300 text-base-content min-h-screen relative no-bounce">
       <header className="sticky top-0 z-50 bg-base-300/80 backdrop-blur-sm shadow-lg p-2">
         <div className="container mx-auto flex justify-between items-center gap-2">
           <Link to={`/manga/${slug}`} className="btn btn-ghost" title="Về trang truyện">
