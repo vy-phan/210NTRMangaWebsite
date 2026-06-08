@@ -34,6 +34,7 @@ const DetailChapter = () => {
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollDelay, setScrollDelay] = useState(5); // Mặc định 5 giây nhảy 1 lần
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAutoScrollTimeRef = useRef(0); // Thời điểm scroll tự động cuối cùng
 
   const displayChapterNumber = Number(chapterNumber);
   const chapterIndex = displayChapterNumber - 1;
@@ -55,6 +56,9 @@ const DetailChapter = () => {
           if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
           return;
         }
+
+        // Đánh dấu thời điểm scroll tự động
+        lastAutoScrollTimeRef.current = Date.now();
 
         // Thực hiện cuộn "Page Down"
         // Scroll 90% màn hình để giữ lại 1 chút context (10%) của đoạn trước
@@ -79,21 +83,21 @@ const DetailChapter = () => {
 
   // === TỰ ĐỘNG DỪNG AUTO SCROLL KHI NGƯỜI DÙNG SCROLL THỦ CÔNG ===
   const handleUserScroll = useCallback(() => {
-    if (isAutoScrolling) {
+    // Nếu là scroll trong 1 giây kể từ auto-scroll cuối cùng -> không dừng
+    const timeSinceLastAutoScroll = Date.now() - lastAutoScrollTimeRef.current;
+    if (isAutoScrolling && timeSinceLastAutoScroll > 1000) {
       setIsAutoScrolling(false);
     }
   }, [isAutoScrolling]);
 
   useEffect(() => {
-    // Lắng nghe các sự kiện scroll, touch, mouse
+    // Lắng nghe các sự kiện scroll, touch
     window.addEventListener('scroll', handleUserScroll, { passive: true });
     window.addEventListener('touchmove', handleUserScroll, { passive: true });
-    window.addEventListener('mousemove', handleUserScroll);
 
     return () => {
       window.removeEventListener('scroll', handleUserScroll);
       window.removeEventListener('touchmove', handleUserScroll);
-      window.removeEventListener('mousemove', handleUserScroll);
     };
   }, [handleUserScroll]);
 

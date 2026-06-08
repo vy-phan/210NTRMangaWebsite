@@ -21,17 +21,20 @@ apiClient.interceptors.response.use(
   async (error) => {
     // Chỉ xử lý khi có lỗi 401
     if (error.response && error.response.status === 401) {
-      const { logout } = useAuthStore.getState();
+      const { user, token, logout } = useAuthStore.getState();
       
-      // Kiểm tra xem đã có thông báo lỗi 401 nào chưa để tránh spam
-      if (!document.querySelector('.toast-401-error')) {
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', {
-          id: 'toast-401-error', // Gán ID để tránh lặp lại
-        });
+      // Chỉ hiển thị thông báo và logout nếu người dùng đã đăng nhập trước đó
+      if (user || token) {
+        // Kiểm tra xem đã có thông báo lỗi 401 nào chưa để tránh spam
+        if (!document.querySelector('.toast-401-error')) {
+          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', {
+            id: 'toast-401-error', // Gán ID để tránh lặp lại
+          });
+        }
+        
+        // Đăng xuất người dùng
+        logout();
       }
-      
-      // Đăng xuất người dùng
-      logout();
       
     }
     return Promise.reject(error);
