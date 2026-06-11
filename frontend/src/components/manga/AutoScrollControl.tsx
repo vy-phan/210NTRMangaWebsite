@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react';
 import { FiPlay, FiPause, FiSettings, FiMinus, FiPlus, FiX } from 'react-icons/fi';
 
 interface AutoScrollControlProps {
@@ -6,55 +5,33 @@ interface AutoScrollControlProps {
   onTogglePlay: () => void;
   delay: number;
   onDelayChange: (newDelay: number) => void;
+  isVisible: boolean;
+  showSettings: boolean;
+  setShowSettings: (show: boolean) => void;
+  resetTimer: () => void;
 }
 
-const AutoScrollControl = ({ isAutoScrolling, onTogglePlay, delay, onDelayChange }: AutoScrollControlProps) => {
-  const [showSettings, setShowSettings] = useState(false);
-  const [isVisible, setIsVisible] = useState(true); // Trạng thái ẩn/hiện
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // --- LOGIC TỰ ĐỘNG ẨN ---
-  const resetTimer = () => {
-    setIsVisible(true); // Hiện ngay lập tức khi có tương tác
-    
-    // Xóa timer cũ
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
-    // Nếu đang mở bảng cài đặt thì KHÔNG đếm ngược để ẩn
-    if (showSettings) return;
-
-    // Set timer mới: Sau 3 giây không chạm gì sẽ tự ẩn
-    timeoutRef.current = setTimeout(() => {
-      setIsVisible(false);
-    }, 3000);
-  };
-
-  // Mỗi khi showSettings thay đổi hoặc delay thay đổi (người dùng đang chỉnh), reset timer
-  useEffect(() => {
-    resetTimer();
-  }, [showSettings, delay, isAutoScrolling]);
-
-  // Hàm tăng giảm thời gian
+const AutoScrollControl = ({ 
+  isAutoScrolling, 
+  onTogglePlay, 
+  delay, 
+  onDelayChange, 
+  isVisible, 
+  showSettings, 
+  setShowSettings, 
+  resetTimer 
+}: AutoScrollControlProps) => {
   const adjustDelay = (amount: number) => {
     const newVal = Math.max(2, Math.min(60, delay + amount));
     onDelayChange(newVal);
-    resetTimer(); // Reset timer khi bấm nút
+    resetTimer();
   };
 
   return (
-    // Wrapper "Vùng cảm ứng" (Hot Zone)
-    // padding-40px: Mở rộng vùng cảm ứng ra xung quanh để dễ chạm/hover hơn
-    <div 
-      className="fixed bottom-0 right-0 z-50 p-6 flex flex-col items-end gap-3 touch-none"
-      onMouseEnter={resetTimer} // Desktop: Hover vào vùng này là hiện
-      onTouchStart={resetTimer} // Mobile: Chạm vào vùng này là hiện
-      onClick={resetTimer}      // Click bất kỳ đâu trong này cũng hiện
-    >
-      
-      {/* --- BẢNG CÀI ĐẶT --- */}
+    <div className="flex flex-col items-start gap-3">
       <div 
         className={`
-          pointer-events-auto origin-bottom-right
+          pointer-events-auto origin-bottom-left
           bg-base-100/95 backdrop-blur-md border border-base-300 shadow-2xl rounded-2xl p-4 w-72 mb-2
           transition-all duration-300 ease-out
           ${showSettings 
@@ -90,14 +67,10 @@ const AutoScrollControl = ({ isAutoScrolling, onTogglePlay, delay, onDelayChange
         </div>
       </div>
 
-      {/* --- CỤM NÚT ĐIỀU KHIỂN CHÍNH --- */}
-      {/* Áp dụng hiệu ứng mờ dần (opacity) và trượt xuống (translate-y) khi ẩn */}
       <div className={`
           flex items-center gap-3 pointer-events-auto transition-all duration-500 ease-in-out
           ${isVisible || showSettings ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-10 scale-90 blur-[1px]'}
       `}>
-        
-        {/* Nút Settings */}
         <button
           className={`btn btn-circle shadow-lg transition-all ${showSettings ? 'btn-neutral' : 'btn-base-100'}`}
           onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
@@ -105,7 +78,6 @@ const AutoScrollControl = ({ isAutoScrolling, onTogglePlay, delay, onDelayChange
           <FiSettings size={20} className={showSettings ? 'animate-spin-slow' : ''} />
         </button>
 
-        {/* Nút Play/Pause */}
         <button
           className={`btn btn-circle btn-lg shadow-xl border-4 transition-all transform active:scale-95 ${
             isAutoScrolling 
@@ -117,7 +89,6 @@ const AutoScrollControl = ({ isAutoScrolling, onTogglePlay, delay, onDelayChange
           {isAutoScrolling ? <FiPause size={32} fill="currentColor" /> : <FiPlay size={32} fill="currentColor" className="ml-1" />}
         </button>
       </div>
-
     </div>
   );
 };

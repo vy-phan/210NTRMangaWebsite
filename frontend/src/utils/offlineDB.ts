@@ -110,4 +110,21 @@ export const deleteChapterOffline = async (slug: string, chapterIndex: number) =
   await db.delete(STORE_NAME, [slug, chapterIndex]);
 };
 
+// Chỉ xóa cache ảnh truyện
+export const clearMangaImageCache = async () => {
+  try {
+    // Xóa cache ảnh truyện (tên cache phải khớp với vite.config.ts)
+    const cacheKeys = await caches.keys();
+    await Promise.all(
+      cacheKeys.filter(key => key.includes('images-cache')).map(key => caches.delete(key))
+    );
+    console.log("Đã xóa cache ảnh truyện.");
+
+    return true;
+  } catch (error) {
+    console.error("Lỗi khi xóa cache ảnh:", error);
+    return false;
+  }
+};
+
 

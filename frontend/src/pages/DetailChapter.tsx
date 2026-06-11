@@ -8,7 +8,7 @@ import { useKeyPress } from '../utils/useKeyPress';
 import ChapterImage from '../components/manga/ChapterImage';
 import ShareChapterModal from '../components/manga/ShareChapterModal';
 import { getChapterOffline } from '../utils/offlineDB';
-import AutoScrollControl from '../components/manga/AutoScrollControl';
+import MangaReaderControls from '../components/manga/MangaReaderControls';
 import ReportChapterModal from '../components/manga/ReportChapterModal';
 import { useHistoryStore } from '../store/useHistoryStore';
 
@@ -311,14 +311,12 @@ const DetailChapter = () => {
       </footer>
 
       {/* === 3. UI FLOATING CONTROL CHO AUTO SCROLL === */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
-        <AutoScrollControl
-          isAutoScrolling={isAutoScrolling}
-          onTogglePlay={() => setIsAutoScrolling(!isAutoScrolling)}
-          delay={scrollDelay}
-          onDelayChange={setScrollDelay}
-        />
-      </div>
+      <MangaReaderControls
+        isAutoScrolling={isAutoScrolling}
+        onTogglePlay={() => setIsAutoScrolling(!isAutoScrolling)}
+        delay={scrollDelay}
+        onDelayChange={setScrollDelay}
+      />
     </div>
   );
 };
