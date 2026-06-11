@@ -7,7 +7,7 @@ import { FiImage, FiX, FiInfo } from 'react-icons/fi'; // Cần cài react-icons
 const AVAILABLE_BANNERS = [
     '/banner/banner1.webp',
     '/banner/banner2.webp',
-    // '/banner/banner3.webp',
+    '/banner/banner3.webp',
     '/banner/banner4.webp',
 ];
 

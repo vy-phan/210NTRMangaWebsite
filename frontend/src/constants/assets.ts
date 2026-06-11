@@ -18,7 +18,7 @@ export const ASSETS = {
     DEFAULT_COVER: '/place-doro.webp',
 
     // Ảnh 4 banner mặc định
-    BANNER_DEFAULT_1: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/3374/panorama/processed-2f920c4a8796afd0b189b3bcbc5bed69.jpg',
-    BANNER_DEFAULT_2: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/673/panorama/processed-2ccf549fa890f878ad8da26661fdcca6.jpg',
-    BANNER_DEFAULT_3: 'https://storage-ct.lrclib.net/file/cuutruyen/uploads/manga/1528/panorama/processed-4bee00dbb2134cd6ae288182ef9edc9f.jpg',
+    BANNER_DEFAULT_1: '/banner/default/1.webp',
+    BANNER_DEFAULT_2: '/banner/default/2.webp',
+    BANNER_DEFAULT_3: '/banner/default/3.webp',
 };

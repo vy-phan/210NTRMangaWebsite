@@ -110,14 +110,13 @@ const Navbar = () => {
                     {user ? (
                         <div className="dropdown dropdown-end">
                             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-                                <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                                    <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                                        <img
-                                            alt="User Avatar"
-                                            src={user.avatarUrl ? user.avatarUrl : ASSETS.DEFAULT_AVATAR(user.displayName)}
-                                            referrerPolicy="no-referrer"
-                                        />
-                                    </div>
+                                <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden">
+                                    <img
+                                        alt="User Avatar"
+                                        src={user.avatarUrl ? user.avatarUrl : ASSETS.DEFAULT_AVATAR(user.displayName)}
+                                        referrerPolicy="no-referrer"
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
                             </div>
                             <ul tabIndex={0} className="menu menu-md dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">

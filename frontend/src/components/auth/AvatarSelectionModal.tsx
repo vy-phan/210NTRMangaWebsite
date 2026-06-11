@@ -82,8 +82,13 @@ const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: 
                             `}
                         >
                             <div className="avatar w-full">
-                                <div className="w-full rounded-full bg-base-200">
-                                    <img src={url} alt={`Avatar ${index + 1}`} loading="lazy" />
+                                <div className="w-full rounded-full bg-base-200 overflow-hidden">
+                                    <img 
+                                        src={url} 
+                                        alt={`Avatar ${index + 1}`} 
+                                        loading="lazy" 
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
                             </div>
 

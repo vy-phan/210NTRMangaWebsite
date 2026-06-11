@@ -87,11 +87,12 @@ const Profile = () => {
 
             {/* Avatar */}
             <div className="avatar mb-4">
-              <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4">
+              <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 overflow-hidden">
                 <img
                   src={user.avatarUrl ? user.avatarUrl : `https://ui-avatars.com/api/?name=${user.displayName}`}
                   alt="User Avatar"
                   referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
