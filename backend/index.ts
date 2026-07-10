@@ -15,7 +15,7 @@ import bannerRouter from './routers/BannerRoutes';
 import promotionRouter from './routers/PromotionRoutes';
 import notificationRouter from './routers/NotificationRouters';
 import chapterReportRouter from './routers/ChapterReportRouters';
-import { startKeepAliveJob } from './utils/cronJob';
+// import { startKeepAliveJob } from './utils/cronJob';
 
 dotenv.config();
 
@@ -80,7 +80,7 @@ const startServer = async () => {
     await connectDB();
 
     // Khởi động Cron Job giữ server hoạt động (Render Keep-alive)
-    startKeepAliveJob();
+    // startKeepAliveJob();
     app.listen(PORT, () => {
       console.log(`Server is running at http://localhost:${PORT}`);
     });
