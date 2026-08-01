@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChapterByNumberAPI, getChaptersByMangaIdAPI } from '../api/chapterApi';
@@ -33,11 +33,11 @@ const DetailChapter = () => {
   // === 1. STATE CHO AUTO SCROLL (PAGE DOWN MODE) ===
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollDelay, setScrollDelay] = useState(5); // Mặc định 5 giây nhảy 1 lần
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastAutoScrollTimeRef = useRef(0); // Thời điểm scroll tự động cuối cùng
 
-  const displayChapterNumber = Number(chapterNumber);
-  const chapterIndex = displayChapterNumber - 1;
+  const displayChapterNumber = useMemo(() => Number(chapterNumber), [chapterNumber]);
+  const chapterIndex = useMemo(() => displayChapterNumber - 1, [displayChapterNumber]);
   const totalChapters = chapterList.length;
 
   // === 2. LOGIC XỬ LÝ AUTO SCROLL (PAGE DOWN) ===
@@ -107,17 +107,17 @@ const DetailChapter = () => {
   }, [slug, chapterNumber]);
 
   // Các hàm điều hướng (Giữ nguyên)
-  const goToPreviousChapter = () => {
+  const goToPreviousChapter = useCallback(() => {
     if (!isLoading && slug && displayChapterNumber > 1) {
       navigate(`/manga/${slug}/chapter/${displayChapterNumber - 1}`);
     }
-  };
+  }, [isLoading, slug, displayChapterNumber, navigate]);
 
-  const goToNextChapter = () => {
+  const goToNextChapter = useCallback(() => {
     if (!isLoading && slug && totalChapters > 0 && displayChapterNumber < totalChapters) {
       navigate(`/manga/${slug}/chapter/${displayChapterNumber + 1}`);
     }
-  };
+  }, [isLoading, slug, totalChapters, displayChapterNumber, navigate]);
 
   useKeyPress('ArrowLeft', goToPreviousChapter);
   useKeyPress('a', goToPreviousChapter);
@@ -204,10 +204,10 @@ const DetailChapter = () => {
     fetchChapterList();
   }, [currentMangaId, isOfflineMode]);
 
-  const handleChapterSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleChapterSelect = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedIndex = Number(e.target.value);
     navigate(`/manga/${slug}/chapter/${selectedIndex}`);
-  };
+  }, [slug, navigate]);
 
   if (isLoading && !chapter) return <ChapterSkeleton />;
 

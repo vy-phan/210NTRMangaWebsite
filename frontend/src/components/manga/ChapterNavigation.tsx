@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiArrowRight, FiArrowUp } from 'react-icons/fi';
 
@@ -57,4 +58,4 @@ const ChapterNavigation = ({ mangaSlug, currentChapterDisplay, totalChapters, is
   );
 };
 
-export default ChapterNavigation;
+export default React.memo(ChapterNavigation);

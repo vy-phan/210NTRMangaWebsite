@@ -5,11 +5,13 @@ import { FiSun, FiMoon, FiMenu, FiLogOut, FiEyeOff, FiEye, FiX } from 'react-ico
 import { getActiveNotificationAPI } from '../../api/notificationApi';
 import { logoutAPI } from '../../api/authApi';
 import { ASSETS } from '../../constants/assets';
+import { useContentHidden } from '../../context/ContentHiddenContext';
+import BottomNavigation from './BottomNavigation';
 
 const Navbar = () => {
     const { user, logout: logoutFromStore } = useAuthStore();
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-    const [isHidden, setIsHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+    const { isContentHidden, toggleContentHidden } = useContentHidden();
     const [notification, setNotification] = useState<Notification | null>(null);
     const [showNotification, setShowNotification] = useState(true);
     const location = useLocation();
@@ -21,12 +23,6 @@ const Navbar = () => {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-
-    useEffect(() => {
-        localStorage.setItem('isContentHidden', isHidden.toString());
-        window.dispatchEvent(new Event('storage-local-change'));
-    }, [isHidden]);
-
     useEffect(() => {
         const fetchNotification = async () => {
             const data = await getActiveNotificationAPI();
@@ -36,7 +32,7 @@ const Navbar = () => {
     }, []);
 
     const handleVisibilityChange = () => {
-        setIsHidden(prev => !prev);
+        toggleContentHidden();
     };
 
     const handleThemeChange = () => {
@@ -98,9 +94,9 @@ const Navbar = () => {
                         onClick={handleVisibilityChange}
                         className="btn btn-ghost btn-circle"
                         aria-label="Toggle content visibility"
-                        title={isHidden ? "Hiện nội dung" : "Ẩn nội dung"}
+                        title={isContentHidden ? "Hiện nội dung" : "Ẩn nội dung"}
                     >
-                        {isHidden ? <FiEyeOff className="h-6 w-6" /> : <FiEye className="h-6 w-6" />}
+                        {isContentHidden ? <FiEyeOff className="h-6 w-6" /> : <FiEye className="h-6 w-6" />}
                     </button>
 
                     <button onClick={handleThemeChange} className="btn btn-ghost btn-circle" aria-label="Toggle theme">
@@ -169,6 +165,9 @@ const Navbar = () => {
                     </button>
                 </div>
             )}
+
+            {/* --- Bottom Navigation (Mobile Only) --- */}
+            <BottomNavigation />
         </>
     );
 };

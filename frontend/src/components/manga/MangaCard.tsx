@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { formatTimeAgo } from '../../utils/dateFomat';
 import { useImageLoader } from '../../utils/useImageLoader';
 import { useHistoryStore } from '../../store/useHistoryStore';
 import { ASSETS } from '../../constants/assets';
+import { useContentHidden } from '../../context/ContentHiddenContext';
 
 interface MangaCardProps {
   manga: Manga;
@@ -14,19 +15,9 @@ const MangaCard = ({ manga }: MangaCardProps) => {
   const displayTime = formatTimeAgo(latestChapTime || manga.updatedAt || manga.createdAt);
 
   const { imageSrc, isLoading } = useImageLoader(manga.poster!, ASSETS.DEFAULT_COVER);
-  const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+  const { isContentHidden } = useContentHidden();
 
   const { addToHistory } = useHistoryStore();
-
-  useEffect(() => {
-    const checkHiddenState = () => {
-      setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
-    };
-    window.addEventListener('storage-local-change', checkHiddenState);
-    return () => {
-      window.removeEventListener('storage-local-change', checkHiddenState);
-    };
-  }, []);
 
   const isNewChapter = (createdAt?: string | Date) => {
     if (!createdAt) return false;
@@ -53,14 +44,16 @@ const MangaCard = ({ manga }: MangaCardProps) => {
           src={imageSrc}
           alt={manga.title}
           className={`
-            w-full h-full object-cover 
-            transition-all duration-500 
-            ${isContentHidden ? 'blur-lg scale-100' : (isLoading ? 'blur-md scale-110' : 'blur-0 scale-100')}
+            w-full h-full object-cover
+            transition-all duration-500
+            ${isContentHidden ? 'blur-xl scale-100' : (isLoading ? 'blur-sm scale-110' : 'blur-0 scale-100')}
             group-hover:scale-105
+            will-change-transform
           `}
           referrerPolicy="no-referrer"
+          loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       </Link>
 
       <div className="card-body p-3 space-y-1">
@@ -84,18 +77,24 @@ const MangaCard = ({ manga }: MangaCardProps) => {
                       className="
                         truncate px-2 py-1 rounded-md transition-colors text-[11px]
                         bg-primary/10 text-primary font-bold hover:bg-primary/20
+                        sm:text-[11px]
+                        relative z-10
                       "
                       onClick={() => handleReadChapter(chap)}
                     >
                       {isOneshot ? 'Oneshot' : `Chương ${chap.title}`}
+                      <span className="sm:hidden block text-[10px] text-base-content/40 italic shrink-0 pointer-events-none">
+                        <br />
+                        {formatTimeAgo(chap.createdAt)}
+                      </span>
                     </Link>
                     {isNewChapter(chap.createdAt) && (
-                      <span className="bg-red-500 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white shrink-0 shadow-sm animate-pulse-subtle">
+                      <span className="bg-red-500 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white shrink-0 shadow-sm animate-pulse-subtle pointer-events-none">
                         Mới
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-base-content/40 italic shrink-0">
+                  <span className="text-[10px] text-base-content/40 italic shrink-0 hidden sm:inline-block pointer-events-none">
                     {formatTimeAgo(chap.createdAt)}
                   </span>
                 </div>
@@ -133,4 +132,4 @@ const MangaCard = ({ manga }: MangaCardProps) => {
   );
 };
 
-export default MangaCard;
+export default memo(MangaCard);

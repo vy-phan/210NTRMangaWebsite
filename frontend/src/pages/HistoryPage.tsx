@@ -2,22 +2,12 @@ import { Link } from 'react-router-dom';
 import { FiTrash2, FiClock, FiBookOpen, FiPlayCircle, FiArrowRight } from 'react-icons/fi';
 import { useHistoryStore } from '../store/useHistoryStore';
 import { formatTimeAgo } from '../utils/dateFomat';
-import { useEffect, useState } from 'react';
+import { useContentHidden } from '../context/ContentHiddenContext';
 
 const HistoryPage = () => {
     // Giữ nguyên logic lấy state và actions
     const { history, removeFromHistory, clearHistory } = useHistoryStore();
-    const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
-
-    useEffect(() => {
-        const checkHiddenState = () => {
-            setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
-        };
-        window.addEventListener('storage-local-change', checkHiddenState);
-        return () => {
-            window.removeEventListener('storage-local-change', checkHiddenState);
-        };
-    }, []);
+    const { isContentHidden } = useContentHidden();
 
     const handleClearAll = () => {
         if (window.confirm("Bạn có chắc muốn xóa toàn bộ lịch sử đọc truyện?")) {

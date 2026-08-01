@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { FiHash } from "react-icons/fi";
 import Banner from "../components/home/Banner";
@@ -8,23 +8,14 @@ import { getAllMangasAPI, getGenreStatsAPI } from "../api/mangaApi";
 import { useNetworkStatus } from "../hook/useNetworkStatus";
 import HeroBanner from "../components/home/HeroBanner";
 import TrendingSide from "../components/home/TrendingSide";
+import { useContentHidden } from "../context/ContentHiddenContext";
 
 const Home = () => {
     const [mangas, setMangas] = useState<Manga[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const isOnline = useNetworkStatus();
-    const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+    const { isContentHidden } = useContentHidden();
     const [hotTags, setHotTags] = useState<string[]>([]);
-
-    useEffect(() => {
-        const checkHiddenState = () => {
-            setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
-        };
-        window.addEventListener('storage-local-change', checkHiddenState);
-        return () => {
-            window.removeEventListener('storage-local-change', checkHiddenState);
-        };
-    }, []);
 
     useEffect(() => {
         if (!isOnline) {
@@ -58,7 +49,7 @@ const Home = () => {
         fetchData();
     }, [isOnline]);
 
-    const rankedMangas = mangas.slice(0, 10);
+    const rankedMangas = useMemo(() => mangas.slice(0, 10), [mangas]);
 
     return (
         <div className="pb-10">
@@ -112,7 +103,7 @@ const Home = () => {
                                             <Link
                                                 key={tag}
                                                 to={`/genre/${tag.toLowerCase()}`}
-                                                className="badge badge-outline hover:badge-primary cursor-pointer transition-all p-3"
+                                                className="badge badge-outline hover:badge-primary cursor-pointer transition-colors duration-150 p-3"
                                             >
                                                 {tag}
                                             </Link>
@@ -123,14 +114,14 @@ const Home = () => {
 
                             {!isContentHidden && (
                                 <div className="card bg-base-100 shadow-xl border border-base-300 overflow-hidden group relative">
-                                    <figure className="relative w-full aspect-[3/4] cursor-pointer ">
+                                    <figure className="relative w-full aspect-[3/4] cursor-pointer">
                                         <img
                                             src="https://cdn2.hentaigifz.com/57750/anime-big-tits-miyazaki-chisaki-scaled.webp"
                                             alt="Featured Content"
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 will-change-transform"
                                             loading="lazy"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                                     </figure>
                                 </div>
                             )}

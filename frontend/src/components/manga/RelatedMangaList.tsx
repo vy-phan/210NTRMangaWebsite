@@ -1,26 +1,14 @@
-import { useState, useEffect } from 'react'; // 1. Import useState, useEffect
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useImageLoader } from '../../utils/useImageLoader';
 import { FiChevronRight } from 'react-icons/fi';
 import MangaStatusBadge from '../common/MangaStatusBadge';
+import { useContentHidden } from '../../context/ContentHiddenContext';
 
 // Component Card Nâng cấp
 const MiniMangaCard = ({ manga }: { manga: Manga }) => {
     const { imageSrc } = useImageLoader(manga.poster!, '/place-doro.webp');
-
-    // 2. Logic lấy trạng thái ẩn/hiện từ LocalStorage
-    const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
-
-    useEffect(() => {
-        const checkHiddenState = () => {
-            setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
-        };
-        // Lắng nghe sự kiện thay đổi từ Navbar
-        window.addEventListener('storage-local-change', checkHiddenState);
-        return () => {
-            window.removeEventListener('storage-local-change', checkHiddenState);
-        };
-    }, []);
+    const { isContentHidden } = useContentHidden();
 
     return (
         <Link
@@ -33,10 +21,9 @@ const MiniMangaCard = ({ manga }: { manga: Manga }) => {
                     src={imageSrc}
                     alt={manga.title}
                     className={`
-                        w-full h-full object-cover 
-                        transition-all duration-500 
-                        /* 3. Logic Blur: Nếu ẩn -> blur-lg, Nếu không -> rõ nét */
-                        ${isContentHidden ? 'blur-lg scale-110' : 'scale-100'}
+                        w-full h-full object-cover
+                        transition-all duration-500
+                        ${isContentHidden ? 'blur-xl scale-110' : 'scale-100'}
                         group-hover:scale-110
                     `}
                     loading="lazy"
@@ -64,6 +51,8 @@ const MiniMangaCard = ({ manga }: { manga: Manga }) => {
         </Link>
     );
 };
+
+const MemoizedMiniMangaCard = memo(MiniMangaCard);
 
 interface RelatedMangaListProps {
     mangas: Manga[];
@@ -94,7 +83,7 @@ const RelatedMangaList = ({ mangas }: RelatedMangaListProps) => {
                 ">
                     {displayMangas.map(manga => (
                         <div key={manga._id} className="snap-start">
-                            <MiniMangaCard manga={manga} />
+                            <MemoizedMiniMangaCard manga={manga} />
                         </div>
                     ))}
 
@@ -113,4 +102,4 @@ const RelatedMangaList = ({ mangas }: RelatedMangaListProps) => {
     );
 };
 
-export default RelatedMangaList;
+export default memo(RelatedMangaList);

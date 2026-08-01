@@ -119,4 +119,4 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
   );
 };
 
-export default ChapterImage;
+export default React.memo(ChapterImage);

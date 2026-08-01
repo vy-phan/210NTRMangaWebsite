@@ -13,6 +13,7 @@ import ChapterListDownloadButton from '../components/manga/ChapterListDownloadBu
 import RelatedMangaList from '../components/manga/RelatedMangaList';
 import BulkDownloadButton from '../components/manga/BulkDownloadButton';
 import { useHistoryStore } from '../store/useHistoryStore';
+import { useContentHidden } from '../context/ContentHiddenContext';
 
 // Component con để hiển thị skeleton loading
 const DetailMangaSkeleton = () => (
@@ -66,19 +67,9 @@ const DetailManga = () => {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isLoadingChapters, setIsLoadingChapters] = useState(true);
   const [relatedMangas, setRelatedMangas] = useState<Manga[]>([]);
-  const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
+  const { isContentHidden, toggleContentHidden } = useContentHidden();
 
   const zoomModalRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const checkHiddenState = () => {
-      setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
-    };
-    window.addEventListener('storage-local-change', checkHiddenState);
-    return () => {
-      window.removeEventListener('storage-local-change', checkHiddenState);
-    };
-  }, []);
 
   useEffect(() => {
     if (!slug) {
@@ -504,7 +495,7 @@ const DetailManga = () => {
                 // Click vào ảnh để bỏ che (nếu đang che) hoặc đóng modal (nếu không che - tuỳ chọn)
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (isContentHidden) setIsContentHidden(false);
+                  if (isContentHidden) toggleContentHidden();
                 }}
               />
             </div>

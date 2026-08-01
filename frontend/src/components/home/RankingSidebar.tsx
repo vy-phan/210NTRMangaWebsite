@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { formatTimeAgo } from '../../utils/dateFomat';
+import { useContentHidden } from '../../context/ContentHiddenContext';
 
 // Số lượng item hiển thị ban đầu
 const ITEMS_PER_PAGE = 5;
@@ -11,18 +12,7 @@ interface RankingItemProps {
 }
 
 const RankingItem = ({ manga, rank }: RankingItemProps) => {
-  const [isContentHidden, setIsContentHidden] = useState(() => localStorage.getItem('isContentHidden') === 'true');
-  useEffect(() => {
-    const checkHiddenState = () => {
-      setIsContentHidden(localStorage.getItem('isContentHidden') === 'true');
-    };
-
-    window.addEventListener('storage-local-change', checkHiddenState);
-    
-    return () => {
-      window.removeEventListener('storage-local-change', checkHiddenState);
-    };
-  }, []);
+  const { isContentHidden } = useContentHidden();
 
   // Lấy màu sắc đặc biệt cho top 3
   const rankColor =
@@ -33,22 +23,21 @@ const RankingItem = ({ manga, rank }: RankingItemProps) => {
 
   return (
     <li>
-      <Link to={`/manga/${manga.slug}`} className="flex items-start gap-4 p-2.5 hover:bg-base-200 rounded-lg transition-colors duration-200 group">
+      <Link to={`/manga/${manga.slug}`} className="flex items-start gap-4 p-2.5 hover:bg-base-200 rounded-lg transition-colors duration-150 group">
         {/* Số thứ hạng được thiết kế lại */}
-        <div className={`text-3xl font-black w-8 text-center ${rankColor} transition-transform duration-300 group-hover:scale-110`}>
+        <div className={`text-3xl font-black w-8 text-center ${rankColor} transition-transform duration-200 group-hover:scale-110`}>
           {rank}
         </div>
 
         {/* Ảnh bìa */}
         <div className="avatar flex-shrink-0">
-          <div className="w-16 rounded-md shadow overflow-hidden"> 
-            {/* overflow-hidden ở thẻ cha giúp bo góc mượt hơn khi ảnh bị blur */}
-            <img 
-              src={manga.poster} 
-              alt={manga.title} 
+          <div className="w-16 rounded-md shadow overflow-hidden">
+            <img
+              src={manga.poster}
+              alt={manga.title}
               referrerPolicy="no-referrer"
-              // 3. Logic làm mờ ảnh (blur-lg)
               className={`transition-all duration-300 ${isContentHidden ? 'blur-md scale-110' : 'blur-0 scale-100'}`}
+              loading="lazy"
             />
           </div>
         </div>
@@ -72,6 +61,7 @@ const RankingItem = ({ manga, rank }: RankingItemProps) => {
   );
 };
 
+const MemoizedRankingItem = memo(RankingItem);
 
 // Component chính, bây giờ nhận `mangas` làm prop
 interface RankingSidebarProps {
@@ -109,7 +99,7 @@ const RankingSidebar = ({ mangas, title = "Bảng Xếp Hạng" }: RankingSideba
 
         <ul className="space-y-2">
           {rankingData.slice(0, itemsToShow).map((manga, index) => (
-            <RankingItem key={manga._id} manga={manga} rank={index + 1} />
+            <MemoizedRankingItem key={manga._id} manga={manga} rank={index + 1} />
           ))}
         </ul>
 
@@ -123,4 +113,4 @@ const RankingSidebar = ({ mangas, title = "Bảng Xếp Hạng" }: RankingSideba
   );
 };
 
-export default RankingSidebar;
+export default memo(RankingSidebar);

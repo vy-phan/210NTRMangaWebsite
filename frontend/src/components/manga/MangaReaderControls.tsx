@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import AutoScrollControl from './AutoScrollControl';
@@ -19,7 +19,7 @@ const MangaReaderControls = ({
 }: MangaReaderControlsProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
   const resetTimer = () => {
@@ -95,4 +95,4 @@ const MangaReaderControls = ({
   );
 };
 
-export default MangaReaderControls;
+export default React.memo(MangaReaderControls);

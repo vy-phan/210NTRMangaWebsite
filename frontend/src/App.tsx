@@ -6,6 +6,7 @@ import AuthListener from './components/auth/AuthListener';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import NotFound from './pages/NotFound';
+import { ContentHiddenProvider } from './context/ContentHiddenContext';
 
 // 2. Chuyển đổi các trang (Pages) sang Lazy Load
 const OfflinePage = lazy(() => import('./pages/OfflinePage'));
@@ -61,11 +62,12 @@ const App = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Router>
-        <Toaster position="bottom-right" reverseOrder={false} />
-        <AuthListener />
+      <ContentHiddenProvider>
+        <Router>
+          <Toaster position="bottom-right" reverseOrder={false} />
+          <AuthListener />
 
-        <Navbar />
+          <Navbar />
 
         {!isOnline && showOfflineBanner && (
           <div className="bg-error text-error-content px-4 py-2 text-center text-sm font-bold flex items-center justify-center gap-2 sticky top-0 z-[100] transition-all">
@@ -128,6 +130,7 @@ const App = () => {
 
         <Footer />
       </Router>
+      </ContentHiddenProvider>
     </div>
   );
 }

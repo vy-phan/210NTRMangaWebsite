@@ -75,11 +75,39 @@ body {
 
 /* --- TỐI ƯU ẢNH CHO iPHONE */
 img {
-    will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+}
+
+/* Chỉ apply GPU acceleration khi cần thiết */
+.gpu-accelerated {
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Giảm animation trên mobile để tiết kiệm pin */
+@media (max-width: 768px) {
+    .group:hover .group-hover\:scale-105 {
+        transform: scale(1.05);
+    }
+    
+    .group:hover .group-hover\:scale-110 {
+        transform: scale(1.1);
+    }
+    
+    /* Giảm blur effect trên mobile */
+    .blur-lg {
+        filter: blur(8px);
+    }
+    
+    .blur-md {
+        filter: blur(4px);
+    }
+    
+    .blur-sm {
+        filter: blur(2px);
+    }
 }
 
 /* Tối ưu performance cho scroll */
