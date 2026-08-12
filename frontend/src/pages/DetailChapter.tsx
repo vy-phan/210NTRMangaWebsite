@@ -35,6 +35,9 @@ const DetailChapter = () => {
   const [scrollDelay, setScrollDelay] = useState(5); // Mặc định 5 giây nhảy 1 lần
   const scrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastAutoScrollTimeRef = useRef(0); // Thời điểm scroll tự động cuối cùng
+  const scrollPositionRef = useRef(0); // Lưu vị trí scroll
+  const prevSlugRef = useRef(slug);
+  const prevChapterNumberRef = useRef(chapterNumber);
 
   const displayChapterNumber = useMemo(() => Number(chapterNumber), [chapterNumber]);
   const chapterIndex = useMemo(() => displayChapterNumber - 1, [displayChapterNumber]);
@@ -83,6 +86,9 @@ const DetailChapter = () => {
 
   // === TỰ ĐỘNG DỪNG AUTO SCROLL KHI NGƯỜI DÙNG SCROLL THỦ CÔNG ===
   const handleUserScroll = useCallback(() => {
+    // Lưu vị trí scroll hiện tại
+    scrollPositionRef.current = window.scrollY;
+    
     // Nếu là scroll trong 1 giây kể từ auto-scroll cuối cùng -> không dừng
     const timeSinceLastAutoScroll = Date.now() - lastAutoScrollTimeRef.current;
     if (isAutoScrolling && timeSinceLastAutoScroll > 1000) {
@@ -183,9 +189,23 @@ const DetailChapter = () => {
         }
       } finally {
         setIsLoading(false);
+        // Restore scroll position sau khi load xong (nếu có lưu)
+        if (scrollPositionRef.current > 0) {
+          setTimeout(() => {
+            window.scrollTo(0, scrollPositionRef.current);
+          }, 100);
+        }
       }
     };
-    window.scrollTo(0, 0);
+    // Chỉ reset scroll khi chuyển chapter khác, không reset khi F5
+    if (prevSlugRef.current !== slug || prevChapterNumberRef.current !== chapterNumber) {
+      scrollPositionRef.current = 0; // Reset khi chuyển chapter mới
+      window.scrollTo(0, 0);
+    }
+    
+    prevSlugRef.current = slug;
+    prevChapterNumberRef.current = chapterNumber;
+    
     fetchChapterContent();
   }, [slug, chapterNumber]);
 
@@ -221,7 +241,12 @@ const DetailChapter = () => {
   }
 
   return (
-    <div className="bg-base-300 text-base-content min-h-screen relative no-bounce">
+    <div className="bg-base-300 text-base-content min-h-screen relative no-bounce" style={{ 
+      WebkitOverflowScrolling: 'touch',
+      willChange: 'transform',
+      backfaceVisibility: 'hidden',
+      WebkitBackfaceVisibility: 'hidden'
+    }}>
       <header className="sticky top-0 z-50 bg-base-300/80 backdrop-blur-sm shadow-lg p-2">
         <div className="container mx-auto flex justify-between items-center gap-2">
           <Link to={`/manga/${slug}`} className="btn btn-ghost" title="Về trang truyện">
@@ -254,7 +279,11 @@ const DetailChapter = () => {
         </div>
       </header>
 
-      <main className="flex flex-col items-center">
+      <main className="flex flex-col items-center" style={{ 
+        willChange: 'transform',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden'
+      }}>
         {isOfflineMode && (
           <div className="w-full bg-warning text-warning-content text-center text-sm py-1 font-bold flex justify-center items-center gap-2">
             <FiWifiOff />

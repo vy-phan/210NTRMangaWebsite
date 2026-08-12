@@ -12,6 +12,7 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
   const [hasError, setHasError] = useState(false);
   const [imageSrc, setImageSrc] = useState('/place-doro.webp');
   const [loadKey, setLoadKey] = useState(0); // Key để reset component khi retry
+  const [isLoaded, setIsLoaded] = useState(false); // Track if image is loaded
   const imgRef = useRef<HTMLDivElement>(null);
 
   const preventInteraction = (e: React.MouseEvent | React.DragEvent) => {
@@ -22,6 +23,7 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
   const loadImage = useCallback(() => {
     setIsLoading(true);
     setHasError(false);
+    setIsLoaded(false);
 
     const img = new Image();
     img.src = src;
@@ -29,11 +31,13 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
     img.onload = () => {
       setImageSrc(src);
       setIsLoading(false);
+      setIsLoaded(true);
     };
 
     img.onerror = () => {
       setIsLoading(false);
       setHasError(true);
+      setIsLoaded(false);
     };
 
     return () => {
@@ -46,17 +50,32 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
   useEffect(() => {
     if (!imgRef.current) return;
 
+    // Detect iOS device cũ (iPhone 6, 6 Plus, 7, etc.)
+    const isOldIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && 
+                     (navigator.userAgent.includes('iPhone OS 9') || 
+                      navigator.userAgent.includes('iPhone OS 10') ||
+                      navigator.userAgent.includes('iPhone OS 11') ||
+                      window.navigator.maxTouchPoints > 0 && 
+                      window.screen.width <= 414);
+
+    // RootMargin nhỏ hơn cho device cũ để giảm memory load
+    const rootMargin = isOldIOS ? '300px 0px' : '500px 0px';
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsInView(true);
-            observer.unobserve(entry.target);
+            observer.unobserve(entry.target); // Chỉ observe 1 lần
+          } else if (isOldIOS && isLoaded) {
+            // Cleanup memory cho device cũ khi ảnh ra khỏi viewport
+            setImageSrc('/place-doro.webp');
+            setIsLoaded(false);
           }
         });
       },
       {
-        rootMargin: '1000px 0px', // Load ảnh trước 1000px (tốt hơn cho iPhone)
+        rootMargin,
         threshold: 0.01
       }
     );
@@ -66,7 +85,7 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
     return () => {
       if (imgRef.current) observer.unobserve(imgRef.current);
     };
-  }, []);
+  }, [isLoaded]);
 
   // Tải ảnh thật khi vào viewport
   useEffect(() => {
@@ -89,10 +108,13 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
           max-w-full h-auto block mx-auto
           transition-opacity duration-500
           ${isLoading ? 'opacity-0' : 'opacity-100'}
+          touch-action: pan-y pinch-zoom
         `}
         referrerPolicy="no-referrer"
         onContextMenu={preventInteraction}
         onDragStart={preventInteraction}
+        loading="lazy"
+        decoding="async"
       />
       
       {/* Hiển thị skeleton khi đang load */}
