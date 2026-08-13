@@ -71,7 +71,7 @@ body {
 /* Ngăn chặn bounce scroll trên iOS */
 .no-bounce {
     overscroll-behavior: none;
-    touch-action: pan-y; 
+    
 }
 
 /* --- TỐI ƯU ẢNH CHO iPHONE */
