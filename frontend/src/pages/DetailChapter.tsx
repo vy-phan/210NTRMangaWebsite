@@ -81,19 +81,19 @@ const DetailChapter = () => {
     };
   }, [isAutoScrolling, scrollDelay]);
 
-// Lưu và khôi phục vị trí cuộn theo từng chương
-useEffect(() => {
-  if (!chapter) return;
-  const key = `scroll:${slug}:${chapterNumber}`;
-  const saved = sessionStorage.getItem(key);
-  if (saved) {
-    requestAnimationFrame(() => window.scrollTo(0, Number(saved)));
-  }
+  // Lưu và khôi phục vị trí cuộn theo từng chương
+  useEffect(() => {
+    if (!chapter) return;
+    const key = `scroll:${slug}:${chapterNumber}`;
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      requestAnimationFrame(() => window.scrollTo(0, Number(saved)));
+    }
 
-  const onScroll = () => sessionStorage.setItem(key, String(window.scrollY));
-  window.addEventListener('scroll', onScroll, { passive: true });
-  return () => window.removeEventListener('scroll', onScroll);
-}, [chapter, slug, chapterNumber]);
+    const onScroll = () => sessionStorage.setItem(key, String(window.scrollY));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [chapter, slug, chapterNumber]);
 
   // === TỰ ĐỘNG DỪNG AUTO SCROLL KHI NGƯỜI DÙNG SCROLL THỦ CÔNG ===
   const handleUserScroll = useCallback(() => {
@@ -243,7 +243,8 @@ useEffect(() => {
           </Link>
 
           <select
-            className="select select-bordered select-sm max-w-xs font-bold"
+            className="select select-bordered select-sm w-32 sm:max-w-xs font-bold truncate"
+            style={{ textOverflow: 'ellipsis' }}
             value={displayChapterNumber}
             onChange={handleChapterSelect}
             disabled={isOfflineMode && chapterList.length === 0}
@@ -277,17 +278,26 @@ useEffect(() => {
         )}
 
         <div className="flex flex-col items-center gap-2">
-          <div className="text-sm breadcrumbs flex justify-center py-0">
-            <ul>
-              <li><Link to="/">Trang chủ</Link></li>
-              <li>
+          <div className="text-sm breadcrumbs flex justify-center py-0 w-full max-w-full px-2">
+            <ul className="min-w-0 max-w-full items-start">
+              <li className="shrink-0">
+                <Link to="/">Trang chủ</Link>
+              </li>
+              <li className="min-w-0 max-w-[45vw] sm:max-w-[220px]">
                 {typeof chapter.manga === 'object' && 'title' in chapter.manga && (
-                  <Link to={`/manga/${slug}`} className="font-semibold truncate max-w-[150px]">
+                  <Link
+                    to={`/manga/${slug}`}
+                    className="font-semibold whitespace-normal break-words leading-snug"
+                  >
                     {(chapter.manga as { title: string }).title}
                   </Link>
                 )}
               </li>
-              <li><span className="font-bold text-primary">Chương {chapter.title}</span></li>
+              <li className="min-w-0 max-w-[45vw] sm:max-w-[260px]">
+                <span className="font-bold text-primary whitespace-normal break-words leading-snug">
+                  Chương {chapter.title}
+                </span>
+              </li>
             </ul>
           </div>
 
