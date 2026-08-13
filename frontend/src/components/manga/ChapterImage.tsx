@@ -89,7 +89,6 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
           loading="lazy"
           decoding="async"
           className="max-w-full h-auto block mx-auto opacity-100 transition-opacity duration-300"
-          style={{ maxHeight: '15000px' }}
           referrerPolicy="no-referrer"
           onContextMenu={preventInteraction}
           onDragStart={preventInteraction}
