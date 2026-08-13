@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiTrash2 } from 'react-icons/fi';
+import { FiTrash2, FiArrowUp } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import AutoScrollControl from './AutoScrollControl';
 import { clearMangaImageCache } from '../../utils/offlineDB';
@@ -57,6 +57,10 @@ const MangaReaderControls = ({
     }
   };
 
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div 
       className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-2"
@@ -64,9 +68,9 @@ const MangaReaderControls = ({
       onTouchStart={resetTimer}
       onClick={resetTimer}
     >
-      {/* Nút Xóa Cache */}
+      {/* Nút Xóa Cache và Scroll lên đầu */}
       <div className={`
-        pointer-events-auto transition-all duration-500 ease-in-out
+        pointer-events-auto transition-all duration-500 ease-in-out flex gap-2
           ${isVisible || showSettings ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-10 scale-90 blur-[1px]'}
       `}>
         <button
@@ -79,6 +83,13 @@ const MangaReaderControls = ({
           ) : (
             <FiTrash2 size={20} />
           )}
+        </button>
+        <button
+          className="btn btn-circle shadow-lg bg-secondary hover:bg-secondary-focus text-white"
+          onClick={handleScrollToTop}
+          title="Lên đầu trang"
+        >
+          <FiArrowUp size={20} />
         </button>
       </div>
       <AutoScrollControl

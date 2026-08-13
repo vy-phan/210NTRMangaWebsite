@@ -5,9 +5,9 @@ const BottomNavigation = () => {
     const location = useLocation();
     
     // Hide bottom navigation on manga detail pages
-    const isMangaDetailPage = location.pathname.startsWith('/manga/');
+    const isMangaDetailChapterPage = location.pathname.startsWith('/manga/') && location.pathname.split('/').length === 5;
     
-    if (isMangaDetailPage) {
+    if (isMangaDetailChapterPage) {
         return null;
     }
 

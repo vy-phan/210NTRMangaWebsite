@@ -3,11 +3,8 @@
 @import 'swiper/css/pagination';
 @import 'swiper/css/navigation';
 
-/* stylelint-disable-line at-rule-no-unknown */
 @tailwind base;
-/* stylelint-disable-line at-rule-no-unknown */
 @tailwind components;
-/* stylelint-disable-line at-rule-no-unknown */
 @tailwind utilities;
 
 /* Ẩn thanh cuộn cho Chrome, Safari and Opera */
@@ -80,33 +77,6 @@ body {
 img {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    touch-action: pan-y pinch-zoom;
-    max-width: 100%;
-    height: auto;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-}
-
-/* Prevent white screen on zoom */
-img:focus {
-    outline: none;
-}
-
-/* Optimized scroll for old iOS devices */
-@media (max-width: 414px) {
-    /* iPhone 6, 6 Plus, 7, 8, etc. */
-    body {
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior-y: none;
-    }
-    
-    /* Force GPU layer for scroll containers */
-    .scroll-container,
-    main {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        will-change: transform;
-    }
 }
 
 /* Chỉ apply GPU acceleration khi cần thiết */

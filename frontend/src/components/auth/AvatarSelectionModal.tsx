@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiCheck, FiUser } from 'react-icons/fi';
 
-const TOTAL_AVATARS = 25;
+const TOTAL_AVATARS = 26;
 
 interface AvatarSelectionModalProps {
     modalRef: React.RefObject<HTMLDialogElement>;
@@ -82,12 +82,22 @@ const AvatarSelectionModal = ({ modalRef, currentAvatar, currentName, onSave }: 
                             `}
                         >
                             <div className="avatar w-full">
-                                <div className="w-full rounded-full bg-base-200 overflow-hidden">
-                                    <img 
-                                        src={url} 
-                                        alt={`Avatar ${index + 1}`} 
-                                        loading="lazy" 
+                                <div className="w-full rounded-full bg-base-200 overflow-hidden" style={{
+                                    borderRadius: '50%',
+                                    backgroundColor: 'var(--b2)',
+                                    overflow: 'hidden'
+                                }}>
+                                    <img
+                                        src={url}
+                                        alt={`Avatar ${index + 1}`}
+                                        loading="lazy"
                                         className="w-full h-full object-cover"
+                                        style={{
+                                            borderRadius: '50%',
+                                            objectFit: 'cover',
+                                            width: '100%',
+                                            height: '100%'
+                                        }}
                                     />
                                 </div>
                             </div>
