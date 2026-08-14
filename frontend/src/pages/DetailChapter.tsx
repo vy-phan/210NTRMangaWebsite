@@ -86,13 +86,40 @@ const DetailChapter = () => {
     if (!chapter) return;
     const key = `scroll:${slug}:${chapterNumber}`;
     const saved = sessionStorage.getItem(key);
+
+    let userInterrupted = false;
+    const markInterrupted = () => { userInterrupted = true; };
+
     if (saved) {
-      requestAnimationFrame(() => window.scrollTo(0, Number(saved)));
+      const targetY = Number(saved);
+      let attempts = 0;
+      const maxAttempts = 8;
+
+      // Nếu user chủ động cuộn/chạm trong lúc đang restore -> dừng ngay, tránh giật lại
+      window.addEventListener('wheel', markInterrupted, { once: true, passive: true });
+      window.addEventListener('touchstart', markInterrupted, { once: true, passive: true });
+
+      const restoreAndCheck = () => {
+        if (userInterrupted) return;
+        window.scrollTo(0, targetY);
+        window.dispatchEvent(new Event('force-check-images'));
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(() => requestAnimationFrame(restoreAndCheck), 150);
+        }
+      };
+
+      requestAnimationFrame(restoreAndCheck);
     }
 
     const onScroll = () => sessionStorage.setItem(key, String(window.scrollY));
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('wheel', markInterrupted);
+      window.removeEventListener('touchstart', markInterrupted);
+    };
   }, [chapter, slug, chapterNumber]);
 
   // === TỰ ĐỘNG DỪNG AUTO SCROLL KHI NGƯỜI DÙNG SCROLL THỦ CÔNG ===

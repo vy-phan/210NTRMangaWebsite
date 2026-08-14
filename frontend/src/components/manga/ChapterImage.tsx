@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { FiRefreshCw } from 'react-icons/fi';
 import { getOptimizedSrc } from '../../utils/imageUrl';
-
-// Cache kích thước ảnh đã biết, tránh đo lại mỗi lần scroll qua lại
-const dimensionCache = new Map<string, number>(); // src -> aspectRatio (h/w)
+import { getCachedAspectRatio, setCachedAspectRatio } from '../../utils/imageDimensionCache';
 
 interface ChapterImageProps {
   src: string;
@@ -12,10 +10,14 @@ interface ChapterImageProps {
 
 const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
   const [status, setStatus] = useState<'idle' | 'loading' | 'loaded' | 'error' | 'unloaded'>('idle');
-  const [aspectRatio, setAspectRatio] = useState<number | null>(dimensionCache.get(src) ?? null);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(getCachedAspectRatio(src) ?? null);
   const [loadKey, setLoadKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasLoadedOnce = useRef(false);
+
+  // Giữ status mới nhất trong ref để observer không cần tạo lại mỗi lần status đổi
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
   const preventInteraction = (e: React.MouseEvent | React.DragEvent) => e.preventDefault();
 
@@ -24,25 +26,35 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
     const img = new Image();
     img.src = getOptimizedSrc(src);
 
+    // An toàn: nếu mạng chập chờn, ảnh treo mãi ở "loading" -> tự chuyển sang lỗi sau 15s
+    const timeoutId = setTimeout(() => {
+      setStatus((s) => (s === 'loading' ? 'error' : s));
+    }, 15000);
+
     img.onload = () => {
+      clearTimeout(timeoutId);
       if (img.naturalWidth > 0) {
         const ratio = img.naturalHeight / img.naturalWidth;
-        dimensionCache.set(src, ratio);
+        setCachedAspectRatio(src, ratio);
         setAspectRatio(ratio);
       }
       hasLoadedOnce.current = true;
       setStatus('loaded');
     };
 
-    img.onerror = () => setStatus('error');
+    img.onerror = () => {
+      clearTimeout(timeoutId);
+      setStatus('error');
+    };
 
     return () => {
+      clearTimeout(timeoutId);
       img.onload = null;
       img.onerror = null;
     };
   }, [src]);
 
-  // Observer: load khi gần viewport (biên hẹp hơn để tiết kiệm RAM), unload khi đi xa
+  // Observer: chỉ tạo 1 lần khi mount, không tạo lại mỗi khi status đổi
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -50,15 +62,13 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            if (status === 'idle' || status === 'unloaded') loadImage();
-          } else if (hasLoadedOnce.current && status === 'loaded') {
-            // Đi xa khỏi viewport -> nhả ảnh khỏi bộ nhớ, giữ chỗ bằng aspect-ratio
+            if (statusRef.current === 'idle' || statusRef.current === 'unloaded') loadImage();
+          } else if (hasLoadedOnce.current && statusRef.current === 'loaded') {
             setStatus('unloaded');
           }
         });
       },
       {
-        // Giảm từ 1000px xuống, và tách preload trước/sau
         rootMargin: '600px 0px 600px 0px',
         threshold: 0.01,
       }
@@ -66,7 +76,22 @@ const ChapterImage: React.FC<ChapterImageProps> = ({ src, alt }) => {
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [status, loadImage]);
+  }, [loadImage]);
+
+  // Lưới an toàn: ép kiểm tra thủ công khi DetailChapter bắn sự kiện force-check-images
+  useEffect(() => {
+    const forceCheck = () => {
+      if (!containerRef.current) return;
+      if (statusRef.current !== 'idle' && statusRef.current !== 'unloaded') return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const margin = window.innerHeight * 1.5;
+      if (rect.bottom > -margin && rect.top < window.innerHeight + margin) {
+        loadImage();
+      }
+    };
+    window.addEventListener('force-check-images', forceCheck);
+    return () => window.removeEventListener('force-check-images', forceCheck);
+  }, [loadImage]);
 
   const handleRetry = () => {
     setLoadKey((k) => k + 1);
