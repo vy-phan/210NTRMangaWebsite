@@ -25,22 +25,30 @@ const ChapterNavigation = ({ mangaSlug, currentChapterDisplay, totalChapters, is
       {/* Nút Chương Trước */}
       {hasPrevious ? (
         <Link to={`/manga/${mangaSlug}/chapter/${currentChapterDisplay - 1}`} className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`}>
-          <FiArrowLeft /> {isHeader && <span className="hidden md:inline">Trước</span>}
+          <FiArrowLeft />
+          {isHeader && <span className="hidden md:inline">Trước</span>}
+          {!isHeader && <span>Chương trước</span>}
         </Link>
       ) : (
         <button className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`} disabled>
-          <FiArrowLeft /> {isHeader && <span className="hidden md:inline">Trước</span>}
+          <FiArrowLeft />
+          {isHeader && <span className="hidden md:inline">Trước</span>}
+          {!isHeader && <span>Chương trước</span>}
         </button>
       )}
 
       {/* Nút Chương Sau */}
       {hasNext ? (
         <Link to={`/manga/${mangaSlug}/chapter/${currentChapterDisplay + 1}`} className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`}>
-          {isHeader && <span className="hidden md:inline">Sau</span>} <FiArrowRight />
+          {isHeader && <span className="hidden md:inline">Sau</span>}
+          {!isHeader && <span>Chương sau</span>}
+          <FiArrowRight />
         </Link>
       ) : (
         <button className={`join-item btn ${isHeader ? 'btn-ghost' : ''}`} disabled>
-          {isHeader && <span className="hidden md:inline">Sau</span>} <FiArrowRight />
+          {isHeader && <span className="hidden md:inline">Sau</span>}
+          {!isHeader && <span>Chương sau</span>}
+          <FiArrowRight />
         </button>
       )}
 
@@ -51,7 +59,6 @@ const ChapterNavigation = ({ mangaSlug, currentChapterDisplay, totalChapters, is
           aria-label="Cuộn lên đầu trang"
         >
           <FiArrowUp />
-          <span className="hidden md:inline">Lên Đầu</span>
         </button>
       )}
     </div>

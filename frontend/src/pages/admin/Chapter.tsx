@@ -3,7 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChaptersByMangaIdAPI, createChapterAPI, updateChapterAPI, deleteChapterAPI, type ChapterInput } from '../../api/chapterApi';
 import ChapterModal from '../../components/admin/ChapterModal';
-import { FiPlus, FiEdit, FiTrash2, FiImage } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiImage, FiRefreshCw } from 'react-icons/fi';
 import ImageLibraryModal from '../../components/admin/ImageLibraryModal';
 import { getMangaTitleByIdAPI } from '../../api/mangaApi';
 import { deleteChapterImagesAPI } from '../../api/imageUpload';
@@ -40,29 +40,30 @@ const ChapterAdmin = () => {
     const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
     const [isImageLibraryOpen, setIsImageLibraryOpen] = useState(false);
 
-    useEffect(() => {
+    const fetchChapters = async () => {
         if (!mangaId) return;
-        const fetchChapters = async () => {
-            try {
-                setIsLoading(true);
-                const [chaptersData, mangaData] = await Promise.all([
-                    getChaptersByMangaIdAPI(mangaId),
-                    getMangaTitleByIdAPI(mangaId)
-                ]);
+        try {
+            setIsLoading(true);
+            const [chaptersData, mangaData] = await Promise.all([
+                getChaptersByMangaIdAPI(mangaId),
+                getMangaTitleByIdAPI(mangaId)
+            ]);
 
-                // Xử lý danh sách chương
-                const sortedData = chaptersData.sort((a, b) => a.number - b.number);
-                setChapters(sortedData);
+            // Xử lý danh sách chương
+            const sortedData = chaptersData.sort((a, b) => a.number - b.number);
+            setChapters(sortedData);
 
-                // Xử lý tên truyện
-                setCurrentMangaTitle(mangaData.title);
+            // Xử lý tên truyện
+            setCurrentMangaTitle(mangaData.title);
 
-            } catch (error) {
-                toast.error("Không thể tải danh sách chương.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        } catch (error) {
+            toast.error("Không thể tải danh sách chương.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchChapters();
     }, [mangaId]);
 
@@ -247,6 +248,10 @@ const ChapterAdmin = () => {
                     <button className="btn btn-outline btn-accent btn-md" onClick={() => setIsImageLibraryOpen(true)}>
                         <FiImage /> <span className="hidden sm:inline">Thư Viện Ảnh</span>
                     </button>
+                    {/* Nút reload */}
+                    <button className="btn btn-outline btn-secondary btn-md" onClick={fetchChapters} disabled={isLoading}>
+                        <FiRefreshCw className={isLoading ? 'animate-spin' : ''} /> <span className="hidden sm:inline">Reload</span>
+                    </button>
                     {/* Nút thêm chương mới */}
                     <button className="btn btn-primary btn-md shadow-lg" onClick={handleOpenAddModal}>
                         <FiPlus /> Thêm Chương Mới
@@ -273,7 +278,7 @@ const ChapterAdmin = () => {
                                     </label>
                                 </th>
                                 )}
-                                <th>Số Chương</th>
+                                <th>Số Chương <br /> ( index )</th>
                                 <th>Tiêu đề</th>
                                 <th>Số lượng ảnh</th>
                                 <th>Cập nhật gần nhất</th>

@@ -9,6 +9,7 @@ import { useNetworkStatus } from "../hook/useNetworkStatus";
 import HeroBanner from "../components/home/HeroBanner";
 import TrendingSide from "../components/home/TrendingSide";
 import { useContentHidden } from "../context/ContentHiddenContext";
+import { useProgressiveReveal } from "../hook/useProgressiveReveal";
 
 const Home = () => {
     const [mangas, setMangas] = useState<Manga[]>([]);
@@ -51,6 +52,9 @@ const Home = () => {
 
     const rankedMangas = useMemo(() => mangas.slice(0, 10), [mangas]);
 
+    // Chỉ render 9 truyện đầu, tăng dần 9 truyện mỗi khi cuộn gần tới cuối
+    const { visibleItems: visibleMangas, hasMore, sentinelRef } = useProgressiveReveal(mangas, 9, 9);
+
     return (
         <div className="pb-10">
             {isContentHidden ? (
@@ -85,7 +89,14 @@ const Home = () => {
                                     <h2 className="text-2xl font-bold border-l-4 border-primary pl-3">Mới Cập Nhật</h2>
                                     <Link to="/search" className="btn btn-xs btn-ghost">Xem tất cả</Link>
                                 </div>
-                                <MangaGrid mangas={mangas} isLoading={isLoading} />
+                                <MangaGrid mangas={visibleMangas} isLoading={isLoading} />
+
+                                {/* Sentinel: phần tử vô hình để phát hiện khi cuộn gần tới cuối danh sách đang hiện */}
+                                {hasMore && (
+                                    <div ref={sentinelRef} className="flex justify-center py-6">
+                                        <span className="loading loading-dots loading-md text-primary"></span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

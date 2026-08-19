@@ -12,6 +12,57 @@ try:
 except Exception:
     pass
 
+class OmegaScansScraper:
+    def __init__(self, log_callback):
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        self.log = log_callback # Hàm dùng để in log ra giao diện
+        self.name = "OmegaScans.org"
+        self.domain = "omegascans.org"
+
+    def get_images(self, url):
+        try:
+            response = requests.get(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            image_urls = []
+            # Selector chính
+            images = soup.select('div.flex.flex-col.justify-center.items-center img')
+            
+            # Selector dự phòng
+            if not images:
+                images = soup.select('#content .container img')
+
+            for img in images:
+                img_url = img.get('src') or img.get('data-src')
+                if img_url:
+                    img_url = img_url.strip()
+                    # Lọc rác
+                    if 'omegascans.org' in img_url or 'imgur' in img_url: 
+                         if img_url.startswith('//'): img_url = 'https:' + img_url
+                         image_urls.append(img_url)
+            return image_urls
+        except Exception as e:
+            self.log(f"   [!] Lỗi khi cào {url}: {e}")
+            return[]
+
+    def post_to_backend(self, payload, backend_url, access_token):
+        headers = {
+            'Authorization': f'Bearer {access_token.strip()}',
+            'Content-Type': 'application/json'
+        }
+        try:
+            response = requests.post(backend_url, json=payload, headers=headers)
+            if response.status_code == 201:
+                return True, response.json()
+            else:
+                return False, response.text
+        except Exception as e:
+            return False, str(e)
+
+
 class DamCoNuongScraper:
     def __init__(self, log_callback):
         self.headers = {
@@ -97,17 +148,24 @@ class MangaUploaderApp:
         scrape_frame = ttk.LabelFrame(self.root, text="Thông Tin Chạy Tool", padding=(10, 10))
         scrape_frame.pack(fill="x", pady=(0, 10))
 
+        # Scraper Selection
+        ttk.Label(scrape_frame, text="Chọn Scraper:").grid(row=0, column=0, sticky="w", pady=5)
+        scraper_options = ["DamCoNuong", "OmegaScans"]
+        self.scraper_var = tk.StringVar(value="DamCoNuong")
+        scraper_combo = ttk.Combobox(scrape_frame, textvariable=self.scraper_var, values=scraper_options, width=47)
+        scraper_combo.grid(row=0, column=1, pady=5, columnspan=3)
+
         # Base URL
-        ttk.Label(scrape_frame, text="Base URL:").grid(row=0, column=0, sticky="w", pady=5)
-        ttk.Entry(scrape_frame, textvariable=self.base_url_var, width=50).grid(row=0, column=1, pady=5, columnspan=3)
+        ttk.Label(scrape_frame, text="Base URL:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Entry(scrape_frame, textvariable=self.base_url_var, width=50).grid(row=1, column=1, pady=5, columnspan=3)
 
         # Start Index
-        ttk.Label(scrape_frame, text="Chương Bắt Đầu:").grid(row=1, column=0, sticky="w", pady=5)
-        ttk.Entry(scrape_frame, textvariable=self.start_idx_var, width=15).grid(row=1, column=1, pady=5, sticky="w")
+        ttk.Label(scrape_frame, text="Chương Bắt Đầu:").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Entry(scrape_frame, textvariable=self.start_idx_var, width=15).grid(row=2, column=1, pady=5, sticky="w")
 
         # End Index
-        ttk.Label(scrape_frame, text="Chương Kết Thúc:").grid(row=1, column=2, sticky="w", pady=5, padx=(10, 0))
-        ttk.Entry(scrape_frame, textvariable=self.end_idx_var, width=15).grid(row=1, column=3, pady=5, sticky="w")
+        ttk.Label(scrape_frame, text="Chương Kết Thúc:").grid(row=2, column=2, sticky="w", pady=5, padx=(10, 0))
+        ttk.Entry(scrape_frame, textvariable=self.end_idx_var, width=15).grid(row=2, column=3, pady=5, sticky="w")
 
         # Frame chứa các nút điều khiển
         button_frame = ttk.Frame(self.root)
@@ -167,7 +225,15 @@ class MangaUploaderApp:
         self.write_log(f"=== BATCH MANGA UPLOADER ===")
         self.write_log(f"🚀 BẮT ĐẦU CHẠY TỪ CHƯƠNG {start_idx} ĐẾN {end_idx}\n")
 
-        scraper = DamCoNuongScraper(log_callback=self.write_log)
+        # Chọn scraper dựa trên lựa chọn của người dùng
+        scraper_type = self.scraper_var.get()
+        if scraper_type == "OmegaScans":
+            scraper = OmegaScansScraper(log_callback=self.write_log)
+        else:
+            scraper = DamCoNuongScraper(log_callback=self.write_log)
+        
+        self.write_log(f"📌 Sử dụng Scraper: {scraper_type}")
+        
         manga_id = self.manga_id_var.get().strip()
         backend_url = self.backend_url_var.get().strip()
         token = self.token_var.get().strip()

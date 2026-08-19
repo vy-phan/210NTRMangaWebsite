@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChapterByNumberAPI, getChaptersByMangaIdAPI } from '../api/chapterApi';
-import { FiHome, FiWifiOff } from 'react-icons/fi';
+import { FiHome, FiWifiOff, FiBook } from 'react-icons/fi';
 import ChapterNavigation from '../components/manga/ChapterNavigation';
 import { useKeyPress } from '../utils/useKeyPress';
 import ChapterImage from '../components/manga/ChapterImage';
@@ -39,6 +39,9 @@ const DetailChapter = () => {
   const displayChapterNumber = useMemo(() => Number(chapterNumber), [chapterNumber]);
   const chapterIndex = useMemo(() => displayChapterNumber - 1, [displayChapterNumber]);
   const totalChapters = chapterList.length;
+
+  // === REF CHO THANH TIẾN ĐỘ (không dùng state -> không gây re-render khi cuộn) ===
+  const progressBarRef = useRef<HTMLDivElement>(null);
 
   // === 2. LOGIC XỬ LÝ AUTO SCROLL (PAGE DOWN) ===
   useEffect(() => {
@@ -146,6 +149,36 @@ const DetailChapter = () => {
   useEffect(() => {
     setIsAutoScrolling(false);
   }, [slug, chapterNumber]);
+
+  // === CẬP NHẬT THANH TIẾN ĐỘ (tối ưu: update DOM trực tiếp qua ref, ===
+  useEffect(() => {
+    let ticking = false;
+
+    const updateProgress = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? Math.min((scrollTop / docHeight) * 100, 100) : 0;
+      if (progressBarRef.current) {
+        progressBarRef.current.style.width = `${progress}%`;
+      }
+      ticking = false;
+    };
+
+    const handleScrollProgress = () => {
+      // Gộp các sự kiện scroll dồn dập lại thành 1 lần đọc/tính mỗi frame
+      if (!ticking) {
+        requestAnimationFrame(updateProgress);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScrollProgress, { passive: true });
+    updateProgress(); // Cập nhật lần đầu
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollProgress);
+    };
+  }, []);
 
   // Các hàm điều hướng (Giữ nguyên)
   const goToPreviousChapter = useCallback(() => {
@@ -265,9 +298,14 @@ const DetailChapter = () => {
     <div className="bg-base-300 text-base-content min-h-screen relative no-bounce">
       <header className="sticky top-0 z-50 bg-base-300/80 backdrop-blur-sm shadow-lg p-2">
         <div className="container mx-auto flex justify-between items-center gap-2">
-          <Link to={`/manga/${slug}`} className="btn btn-ghost" title="Về trang truyện">
-            <FiHome />
-          </Link>
+          <div className="flex gap-1">
+            <Link to="/" className="btn btn-ghost" title="Về trang chủ">
+              <FiHome />
+            </Link>
+            <Link to={`/manga/${slug}`} className="btn btn-ghost" title="Về trang truyện">
+              <FiBook />
+            </Link>
+          </div>
 
           <select
             className="select select-bordered select-sm w-32 sm:max-w-xs font-bold truncate"
@@ -368,6 +406,15 @@ const DetailChapter = () => {
         delay={scrollDelay}
         onDelayChange={setScrollDelay}
       />
+
+      {/* === THANH TIẾN ĐỘ CUỘN (update trực tiếp DOM qua ref, không qua state) === */}
+      <div className="fixed bottom-0 left-0 right-0 h-1 bg-base-200 z-50">
+        <div
+          ref={progressBarRef}
+          className="h-full bg-primary"
+          style={{ width: '0%' }}
+        />
+      </div>
     </div>
   );
 };
