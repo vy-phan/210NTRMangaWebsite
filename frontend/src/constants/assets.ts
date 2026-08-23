@@ -21,4 +21,7 @@ export const ASSETS = {
     BANNER_DEFAULT_1: '/banner/default/1.webp',
     BANNER_DEFAULT_2: '/banner/default/2.webp',
     BANNER_DEFAULT_3: '/banner/default/3.webp',
+
+    // ảnh 404 
+    NOT_FOUND: '/notFound.webp',
 };

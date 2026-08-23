@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getChapterByNumberAPI, getChaptersByMangaIdAPI } from '../api/chapterApi';
-import { FiHome, FiWifiOff, FiBook } from 'react-icons/fi';
+import { FiWifiOff } from 'react-icons/fi';
 import ChapterNavigation from '../components/manga/ChapterNavigation';
 import { useKeyPress } from '../utils/useKeyPress';
 import ChapterImage from '../components/manga/ChapterImage';
@@ -11,6 +11,9 @@ import { getChapterOffline } from '../utils/offlineDB';
 import MangaReaderControls from '../components/manga/MangaReaderControls';
 import ReportChapterModal from '../components/manga/ReportChapterModal';
 import { useHistoryStore } from '../store/useHistoryStore';
+import TranslatePopup from '../components/manga/TranslatePopup';
+import ChapterHeader from '../components/manga/ChapterHeader';
+import ChapterBreadcrumbs from '../components/manga/ChapterBreadcrumbs';
 
 // Component Skeleton
 const ChapterSkeleton = () => (
@@ -29,6 +32,7 @@ const DetailChapter = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const { addToHistory, updateHistoryChapter } = useHistoryStore();
+  const [isTranslateOpen, setIsTranslateOpen] = useState(false);
 
   // === 1. STATE CHO AUTO SCROLL (PAGE DOWN MODE) ===
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -296,43 +300,15 @@ const DetailChapter = () => {
 
   return (
     <div className="bg-base-300 text-base-content min-h-screen relative no-bounce">
-      <header className="sticky top-0 z-50 bg-base-300/80 backdrop-blur-sm shadow-lg p-2">
-        <div className="container mx-auto flex justify-between items-center gap-2">
-          <div className="flex gap-1">
-            <Link to="/" className="btn btn-ghost" title="Về trang chủ">
-              <FiHome />
-            </Link>
-            <Link to={`/manga/${slug}`} className="btn btn-ghost" title="Về trang truyện">
-              <FiBook />
-            </Link>
-          </div>
-
-          <select
-            className="select select-bordered select-sm w-32 sm:max-w-xs font-bold truncate"
-            style={{ textOverflow: 'ellipsis' }}
-            value={displayChapterNumber}
-            onChange={handleChapterSelect}
-            disabled={isOfflineMode && chapterList.length === 0}
-          >
-            {chapterList.length > 0 ? (
-              chapterList.map((chap) => (
-                <option key={chap._id} value={chap.number + 1}>
-                  Chương {chap.title}
-                </option>
-              ))
-            ) : (
-              <option value={displayChapterNumber}>Chương {chapter.title}</option>
-            )}
-          </select>
-
-          <ChapterNavigation
-            mangaSlug={slug!}
-            currentChapterDisplay={displayChapterNumber}
-            totalChapters={totalChapters || 1}
-            isHeader={true}
-          />
-        </div>
-      </header>
+      <ChapterHeader
+        slug={slug!}
+        displayChapterNumber={displayChapterNumber}
+        chapterList={chapterList}
+        isOfflineMode={isOfflineMode}
+        onChapterSelect={handleChapterSelect}
+        onTranslateToggle={() => setIsTranslateOpen((prev) => !prev)}
+        currentChapterTitle={chapter.title}
+      />
 
       <main className="flex flex-col items-center">
         {isOfflineMode && (
@@ -343,28 +319,11 @@ const DetailChapter = () => {
         )}
 
         <div className="flex flex-col items-center gap-2">
-          <div className="text-sm breadcrumbs flex justify-center py-0 w-full max-w-full px-2">
-            <ul className="min-w-0 max-w-full items-start">
-              <li className="shrink-0">
-                <Link to="/">Trang chủ</Link>
-              </li>
-              <li className="min-w-0 max-w-[45vw] sm:max-w-[220px]">
-                {typeof chapter.manga === 'object' && 'title' in chapter.manga && (
-                  <Link
-                    to={`/manga/${slug}`}
-                    className="font-semibold whitespace-normal break-words leading-snug"
-                  >
-                    {(chapter.manga as { title: string }).title}
-                  </Link>
-                )}
-              </li>
-              <li className="min-w-0 max-w-[45vw] sm:max-w-[260px]">
-                <span className="font-bold text-primary whitespace-normal break-words leading-snug">
-                  Chương {chapter.title}
-                </span>
-              </li>
-            </ul>
-          </div>
+          <ChapterBreadcrumbs
+            slug={slug!}
+            chapterTitle={chapter.title}
+            mangaTitle={typeof chapter.manga === 'object' && 'title' in chapter.manga ? (chapter.manga as { title: string }).title : undefined}
+          />
 
           {/* Nút Báo cáo lỗi nhanh */}
           <div className="flex justify-center mt-2 mb-4">
@@ -406,6 +365,8 @@ const DetailChapter = () => {
         delay={scrollDelay}
         onDelayChange={setScrollDelay}
       />
+
+      <TranslatePopup isOpen={isTranslateOpen} onClose={() => setIsTranslateOpen(false)} />
 
       {/* === THANH TIẾN ĐỘ CUỘN (update trực tiếp DOM qua ref, không qua state) === */}
       <div className="fixed bottom-0 left-0 right-0 h-1 bg-base-200 z-50">

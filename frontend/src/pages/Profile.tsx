@@ -87,23 +87,28 @@ const Profile = () => {
 
             {/* Avatar */}
             <div className="avatar mb-4">
-              <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 overflow-hidden" style={{
-                borderRadius: '50%',
-                border: '2px solid var(--p)',
-                padding: '4px',
-                backgroundColor: 'var(--b1)',
-                overflow: 'hidden'
-              }}>
+              <div
+                className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-4 overflow-hidden"
+                style={{
+                  borderRadius: '9999px',
+                  border: '2px solid var(--p)',
+                  padding: '4px',
+                  backgroundColor: 'var(--b1)',
+                  overflow: 'hidden',
+                }}
+              >
                 <img
                   src={user.avatarUrl ? user.avatarUrl : `https://ui-avatars.com/api/?name=${user.displayName}`}
                   alt="User Avatar"
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-full"
                   style={{
-                    borderRadius: '50%',
+                    borderRadius: '9999px',
+                    WebkitBorderRadius: '9999px', // prefix để chắc chắn Safari cũ nhận diện
                     objectFit: 'cover',
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    display: 'block',
                   }}
                 />
               </div>
@@ -158,6 +163,7 @@ const Profile = () => {
       />
 
     </div>
+
   );
 };
 
