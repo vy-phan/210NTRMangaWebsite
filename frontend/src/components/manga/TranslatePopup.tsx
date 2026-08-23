@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { FiGlobe, FiX } from 'react-icons/fi';
 
 // Cache kết quả dịch trong session, tránh gọi lại API cho cùng 1 câu
@@ -40,24 +40,6 @@ const TranslatePopup = ({ isOpen, onClose }: TranslatePopupProps) => {
   const [translation, setTranslation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  // Đóng popup khi bấm ra ngoài
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
 
   const handleTranslate = async () => {
     const text = inputText.trim();
@@ -87,7 +69,6 @@ const TranslatePopup = ({ isOpen, onClose }: TranslatePopupProps) => {
 
   return (
     <div
-      ref={panelRef}
       className="fixed top-16 left-3 z-[150] card bg-base-100 shadow-xl border border-base-300 w-[280px] max-w-[85vw]"
     >
       <div className="card-body p-3 gap-2">
