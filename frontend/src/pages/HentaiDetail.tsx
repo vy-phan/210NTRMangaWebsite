@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getHentaiBySlugAPI, getHentaiEmbedUrl, getHentaiThumbnailUrl } from '../api/hentaiApi';
+import { getHentaiBySlugAPI, getHentaiEmbedUrl } from '../api/hentaiApi';
 import LazyImage from '../utils/LazyImage';
 import { FiClock, FiPlay, FiArrowLeft } from 'react-icons/fi';
 
@@ -32,7 +32,6 @@ const HentaiDetail = () => {
   const [hentai, setHentai] = useState<Hentai | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showStoryboard, setShowStoryboard] = useState(false);
 
   useEffect(() => {
     if (!slug) {
