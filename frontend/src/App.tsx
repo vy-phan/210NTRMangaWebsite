@@ -22,6 +22,8 @@ const DetailManga = lazy(() => import('./pages/DetailManga'));
 const DetailChapter = lazy(() => import('./pages/DetailChapter'));
 const DetailGenre = lazy(() => import('./pages/DetailGenre'));
 const Profile = lazy(() => import('./pages/Profile'));
+const HentaiList = lazy(() => import('./pages/HentaiList'));
+const HentaiDetail = lazy(() => import('./pages/HentaiDetail'));
 
 // Admin Pages
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
@@ -99,6 +101,8 @@ const App = () => {
               <Route path="/category/:categoryName" element={<CategoryPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/history" element={<HistoryPage />} />
+              <Route path="/hentai" element={<HentaiList />} />
+              <Route path="/hentai/:slug" element={<HentaiDetail />} />
 
               {/* Protected User Routes */}
               <Route element={<AuthRouteGuard />}>

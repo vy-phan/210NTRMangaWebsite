@@ -161,6 +161,43 @@ declare global {
             email: string;
         } | null;
     }
+
+    // Hentai API Types
+    interface HentaiInfo {
+        id: number;
+        urlname: string;
+        videoname: string;
+        description: string;
+        releasedate: string;
+        uploaddate: string;
+        coverimg: string;
+        series: string | null;
+        status: number;
+        recentrelease: number;
+    }
+
+    interface HentaiGenre {
+        genre: string;
+    }
+
+    interface HentaiData {
+        info: HentaiInfo[];
+        genres: HentaiGenre[];
+    }
+
+    interface Hentai {
+        id: number;
+        slug: string;
+        title: string;
+        description: string;
+        releaseDate: string;
+        uploadDate: string;
+        coverImage: string;
+        series: string | null;
+        status: number;
+        recentRelease: number;
+        genres: string[];
+    }
 }
 
 export { };

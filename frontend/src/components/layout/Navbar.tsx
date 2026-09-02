@@ -56,6 +56,7 @@ const Navbar = () => {
             <li><NavLink to="/genre">Thể Loại</NavLink></li>
             <li><NavLink to="/offline">Offline</NavLink></li>
             <li><NavLink to="/history">Lịch sử</NavLink></li>
+            <li><NavLink to="/hentai">Hentai</NavLink></li>
         </>
     );
 
