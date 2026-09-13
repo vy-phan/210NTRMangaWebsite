@@ -12,7 +12,23 @@ const HentaiList = () => {
     const fetchHentais = async () => {
       try {
         setIsLoading(true);
-        const data = await getMultipleHentaisAPI(hentaiSlugs);
+        
+        // Group slugs by series name and get only episode 1 of each series
+        const getSeriesName = (slug: string) => {
+          const match = slug.match(/^(.+)-\d+$/);
+          return match ? match[1] : slug;
+        };
+
+        const seriesMap = new Map<string, string>();
+        hentaiSlugs.forEach(slug => {
+          const seriesName = getSeriesName(slug);
+          if (!seriesMap.has(seriesName)) {
+            seriesMap.set(seriesName, slug);
+          }
+        });
+
+        const representativeSlugs = Array.from(seriesMap.values());
+        const data = await getMultipleHentaisAPI(representativeSlugs);
         setHentais(data);
       } catch (err) {
         setError('Failed to load hentai data');

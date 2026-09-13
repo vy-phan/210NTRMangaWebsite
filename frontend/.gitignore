@@ -30,3 +30,7 @@ dist-ssr
 .env.*.local
 ./node_modules
 /node_modules
+
+/public/avatar-manager.html
+/public/avatar_order.json
+/public/rename_avatars.py

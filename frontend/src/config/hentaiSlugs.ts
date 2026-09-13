@@ -6,8 +6,6 @@ export const hentaiSlugs = [
   'imaria-5',
   'kanochi-x-netorare-kazoku-1',
   'kanochi-x-netorare-kazoku-2',
-  'kateikyoushi-x-saimin-2-the-animation-1',
-  'kateikyoushi-x-saimin-2-the-animation-2',
   'akane-wa-tsumare-somerareru-1',
   'akane-wa-tsumare-somerareru-2',
   'saimin-seishidou-1',

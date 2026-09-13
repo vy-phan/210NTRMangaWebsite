@@ -6,6 +6,7 @@ import { FiClock, FiArrowLeft } from 'react-icons/fi';
 import { hentaiSlugs } from '../config/hentaiSlugs';
 import HentaiDetailSkeleton from '../components/common/HentaiDetailSkeleton';
 import EpisodeThumbnail from '../components/hentai/EpisodeThumbnail';
+import EpisodeListItem from '../components/hentai/EpisodeListItem';
 
 const HentaiDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -149,7 +150,18 @@ const HentaiDetail = () => {
             {seriesEpisodes.length > 1 && (
               <div className="bg-base-100 p-6 rounded-box shadow-lg mb-6">
                 <h2 className="text-xl font-bold mb-4">Danh sách tập</h2>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                {/* Mobile: List layout, Desktop: Grid layout */}
+                <div className="flex flex-col sm:hidden gap-2">
+                  {seriesEpisodes.map((episodeSlug) => (
+                    <EpisodeListItem
+                      key={episodeSlug}
+                      episodeSlug={episodeSlug}
+                      currentSlug={hentai.slug}
+                      hentaiTitle={hentai.title}
+                    />
+                  ))}
+                </div>
+                <div className="hidden sm:grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
                   {seriesEpisodes.map((episodeSlug) => (
                     <EpisodeThumbnail
                       key={episodeSlug}
@@ -162,21 +174,6 @@ const HentaiDetail = () => {
             )}
           </div>
         </section>
-
-        {/* Storyboard Section */}
-        {/* <section className="mt-8">
-          <div className="bg-base-100 p-6 rounded-box shadow-lg">
-            <h2 className="text-xl font-bold mb-4">Storyboard</h2>
-            <div className="w-full overflow-hidden rounded-lg">
-              <LazyImage
-                src={getHentaiStoryboardUrl(hentai.slug)}
-                alt="Storyboard"
-                className="w-full h-auto"
-                containerClassName="w-full"
-              />
-            </div>
-          </div>
-        </section> */}
       </div>
 
       <style>{`

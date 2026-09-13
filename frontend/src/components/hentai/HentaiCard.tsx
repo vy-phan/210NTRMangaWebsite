@@ -6,6 +6,9 @@ interface HentaiCardProps {
 }
 
 const HentaiCard = ({ hentai }: HentaiCardProps) => {
+  // Remove episode number from title (e.g., "Kanochi x Netorare Kazoku 1" -> "Kanochi x Netorare Kazoku")
+  const cleanTitle = hentai.title.replace(/\s*\d+$/, '');
+
   return (
     <Link
       to={`/hentai/${hentai.slug}`}
@@ -24,7 +27,7 @@ const HentaiCard = ({ hentai }: HentaiCardProps) => {
         
         <div className="card-body p-4">
           <h3 className="card-title text-base font-semibold line-clamp-2 min-h-[3rem]">
-            {hentai.title}
+            {cleanTitle}
           </h3>
           
           <div className="flex flex-wrap gap-1 mt-2">
