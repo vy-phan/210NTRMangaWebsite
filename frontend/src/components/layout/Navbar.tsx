@@ -10,7 +10,12 @@ import BottomNavigation from './BottomNavigation';
 
 const Navbar = () => {
     const { user, logout: logoutFromStore } = useAuthStore();
-    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+    const [theme, setTheme] = useState(() => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) return savedTheme;
+        // Use system preference as default
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'light';
+    });
     const { isContentHidden, toggleContentHidden } = useContentHidden();
     const [notification, setNotification] = useState<Notification | null>(null);
     const [showNotification, setShowNotification] = useState(true);
@@ -20,8 +25,20 @@ const Navbar = () => {
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
     }, [theme]);
+
+    // Thêm mới: lắng nghe khi user đổi theme ở cấp hệ điều hành
+    useEffect(() => {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+            // Chỉ tự đổi nếu user CHƯA từng chọn thủ công (không có trong localStorage)
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'night' : 'light');
+            }
+        };
+        mq.addEventListener('change', handleSystemThemeChange);
+        return () => mq.removeEventListener('change', handleSystemThemeChange);
+    }, []);
 
     useEffect(() => {
         const fetchNotification = async () => {
@@ -31,6 +48,8 @@ const Navbar = () => {
         fetchNotification();
     }, []);
 
+
+
     const handleVisibilityChange = () => {
         toggleContentHidden();
     };
@@ -38,6 +57,7 @@ const Navbar = () => {
     const handleThemeChange = () => {
         const newTheme = theme === 'light' ? 'night' : 'light';
         setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
     };
 
     const handleLogout = async () => {
@@ -49,6 +69,7 @@ const Navbar = () => {
             logoutFromStore();
         }
     };
+
 
     const navLinks = (
         <>
