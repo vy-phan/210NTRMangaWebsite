@@ -12,12 +12,33 @@ try:
 except Exception:
     pass
 
-class OmegaScansScraper:
+
+class BaseScraper:
+    """Class cơ sở dùng chung để gửi dữ liệu lên backend"""
     def __init__(self, log_callback):
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
-        self.log = log_callback # Hàm dùng để in log ra giao diện
+        self.log = log_callback
+
+    def post_to_backend(self, payload, backend_url, access_token):
+        headers = {
+            'Authorization': f'Bearer {access_token.strip()}',
+            'Content-Type': 'application/json'
+        }
+        try:
+            response = requests.post(backend_url, json=payload, headers=headers)
+            if response.status_code == 201:
+                return True, response.json()
+            else:
+                return False, response.text
+        except Exception as e:
+            return False, str(e)
+
+
+class OmegaScansScraper(BaseScraper):
+    def __init__(self, log_callback):
+        super().__init__(log_callback)
         self.name = "OmegaScans.org"
         self.domain = "omegascans.org"
 
@@ -41,34 +62,19 @@ class OmegaScansScraper:
                     img_url = img_url.strip()
                     # Lọc rác
                     if 'omegascans.org' in img_url or 'imgur' in img_url: 
-                         if img_url.startswith('//'): img_url = 'https:' + img_url
-                         image_urls.append(img_url)
+                        if img_url.startswith('//'):
+                            img_url = 'https:' + img_url
+                        image_urls.append(img_url)
             return image_urls
         except Exception as e:
             self.log(f"   [!] Lỗi khi cào {url}: {e}")
-            return[]
-
-    def post_to_backend(self, payload, backend_url, access_token):
-        headers = {
-            'Authorization': f'Bearer {access_token.strip()}',
-            'Content-Type': 'application/json'
-        }
-        try:
-            response = requests.post(backend_url, json=payload, headers=headers)
-            if response.status_code == 201:
-                return True, response.json()
-            else:
-                return False, response.text
-        except Exception as e:
-            return False, str(e)
+            return []
 
 
-class DamCoNuongScraper:
+class DamCoNuongScraper(BaseScraper):
     def __init__(self, log_callback):
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-        self.log = log_callback # Hàm dùng để in log ra giao diện
+        super().__init__(log_callback)
+        self.name = "DamCoNuong"
 
     def get_images(self, url):
         try:
@@ -76,7 +82,7 @@ class DamCoNuongScraper:
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            image_urls =[]
+            image_urls = []
             for img in soup.select('#chapter-content img'):
                 img_url = img.get('data-original-src') or img.get('data-src') or img.get('src')
                 if img_url:
@@ -88,21 +94,39 @@ class DamCoNuongScraper:
             return image_urls
         except Exception as e:
             self.log(f"   [!] Lỗi khi cào {url}: {e}")
-            return[]
+            return []
 
-    def post_to_backend(self, payload, backend_url, access_token):
-        headers = {
-            'Authorization': f'Bearer {access_token.strip()}',
-            'Content-Type': 'application/json'
-        }
+
+class SaymanhwaScraper(BaseScraper):
+    def __init__(self, log_callback):
+        super().__init__(log_callback)
+        self.name = "Saymanhwa"
+        self.domain = "saymanhwa.com"
+
+    def get_images(self, url):
         try:
-            response = requests.post(backend_url, json=payload, headers=headers)
-            if response.status_code == 201:
-                return True, response.json()
-            else:
-                return False, response.text
+            response = requests.get(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            image_urls = []
+            # Selector nhắm trực tiếp vào các thẻ ảnh bên trong container đọc truyện
+            for img in soup.select(".reader-pages img, [data-reader-pages] img"):
+                img_url = (
+                    img.get("data-src")
+                    or img.get("data-original")
+                    or img.get("src")
+                )
+                if img_url:
+                    img_url = img_url.strip()
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    image_urls.append(img_url)
+
+            return image_urls
         except Exception as e:
-            return False, str(e)
+            self.log(f"   [!] Lỗi khi cào {url}: {e}")
+            return []
 
 
 class MangaUploaderApp:
@@ -133,7 +157,7 @@ class MangaUploaderApp:
 
         # Backend URL (Combobox cho phép chọn 2 option)
         ttk.Label(config_frame, text="Backend URL:").grid(row=1, column=0, sticky="w", pady=5)
-        url_options =[
+        url_options = [
             "https://ntrmanga.onrender.com/api/chapters",
             "http://localhost:7000/api/chapters"
         ]
@@ -148,11 +172,11 @@ class MangaUploaderApp:
         scrape_frame = ttk.LabelFrame(self.root, text="Thông Tin Chạy Tool", padding=(10, 10))
         scrape_frame.pack(fill="x", pady=(0, 10))
 
-        # Scraper Selection
+        # Scraper Selection (Đã bổ sung Saymanhwa)
         ttk.Label(scrape_frame, text="Chọn Scraper:").grid(row=0, column=0, sticky="w", pady=5)
-        scraper_options = ["DamCoNuong", "OmegaScans"]
+        scraper_options = ["DamCoNuong", "OmegaScans", "Saymanhwa"]
         self.scraper_var = tk.StringVar(value="DamCoNuong")
-        scraper_combo = ttk.Combobox(scrape_frame, textvariable=self.scraper_var, values=scraper_options, width=47)
+        scraper_combo = ttk.Combobox(scrape_frame, textvariable=self.scraper_var, values=scraper_options, width=47, state="readonly")
         scraper_combo.grid(row=0, column=1, pady=5, columnspan=3)
 
         # Base URL
@@ -225,10 +249,12 @@ class MangaUploaderApp:
         self.write_log(f"=== BATCH MANGA UPLOADER ===")
         self.write_log(f"🚀 BẮT ĐẦU CHẠY TỪ CHƯƠNG {start_idx} ĐẾN {end_idx}\n")
 
-        # Chọn scraper dựa trên lựa chọn của người dùng
+        # Khởi tạo scraper dựa trên lựa chọn
         scraper_type = self.scraper_var.get()
         if scraper_type == "OmegaScans":
             scraper = OmegaScansScraper(log_callback=self.write_log)
+        elif scraper_type == "Saymanhwa":
+            scraper = SaymanhwaScraper(log_callback=self.write_log)
         else:
             scraper = DamCoNuongScraper(log_callback=self.write_log)
         
@@ -264,7 +290,7 @@ class MangaUploaderApp:
                 "number": chapter_number,
                 "title": chapter_title,
                 "manga": manga_id,
-                "images":[{"url": u, "pageNumber": idx+1} for idx, u in enumerate(image_urls)]
+                "images": [{"url": u, "pageNumber": idx + 1} for idx, u in enumerate(image_urls)]
             }
 
             # 3. Gửi lên Backend
@@ -285,6 +311,7 @@ class MangaUploaderApp:
         # Bật lại nút sau khi chạy xong
         self.root.after(0, lambda: self.start_btn.config(state='normal'))
         messagebox.showinfo("Hoàn thành", f"Đã chạy xong!\nThành công: {success_count} | Thất bại: {fail_count}")
+
 
 if __name__ == "__main__":
     # Khởi tạo GUI

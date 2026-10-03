@@ -15,11 +15,11 @@ import TranslatePopup from '../components/manga/TranslatePopup';
 import ChapterHeader from '../components/manga/ChapterHeader';
 import ChapterBreadcrumbs from '../components/manga/ChapterBreadcrumbs';
 
-// Component Skeleton
+// Component Skeleton (tĩnh, không animation)
 const ChapterSkeleton = () => (
-  <div className="bg-black min-h-screen flex flex-col items-center p-4 animate-pulse">
-    <div className="skeleton h-12 w-full max-w-lg mb-8"></div>
-    <div className="skeleton h-screen w-full max-w-3xl"></div>
+  <div className="bg-base-300 min-h-screen flex flex-col items-center p-4">
+    <div className="bg-base-200 rounded h-12 w-full max-w-lg mb-8" />
+    <div className="bg-base-200 rounded h-[70vh] w-full max-w-3xl" />
   </div>
 );
 

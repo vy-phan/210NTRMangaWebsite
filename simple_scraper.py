@@ -115,7 +115,7 @@ class SimpleMangaDownloaderApp:
         self.is_stopped = False
 
         # Biến giao diện
-        self.base_url_var = tk.StringVar(value="https://damconuong.sbs/truyen/ikenie-no-haha/chapter-")
+        self.base_url_var = tk.StringVar(value="https://damconuong.uno/truyen/ikenie-no-haha/chapter-")
         self.save_dir_var = tk.StringVar(value=os.path.join(os.path.expanduser("~"), "Downloads"))
         self.start_idx_var = tk.StringVar(value="1")
         self.end_idx_var = tk.StringVar(value="5")
