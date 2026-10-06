@@ -102,3 +102,59 @@ export const deleteMangaFolderAPI = async (mangaName: string): Promise<void> => 
         throw error;
     }
 };
+
+// ─── Storage Sync API ───────────────────────────────────────────────────────
+
+export interface MangaSyncDetail {
+    _id: string;
+    title: string;
+    slug: string;
+    onImageKit: boolean;
+    hasDbImages: boolean;
+    dbChapterCount: number;
+    ikChapterCount: number;
+    ikChapters: string[];
+    status: 'synced' | 'no_images' | 'db_only' | 'chapter_mismatch';
+}
+
+export interface SyncStatusResponse {
+    summary: {
+        totalMangas: number;
+        imagekitFolderCount: number;
+        syncedCount: number;
+        noImagesCount: number;
+        dbOnlyCount: number;
+        chapterMismatchCount: number;
+        orphanFolderCount: number;
+    };
+    orphanFolders: string[];
+    dbOnlyImages: string[];
+    mangaDetails: MangaSyncDetail[];
+}
+
+/**
+ * Lấy trạng thái đồng bộ storage ImageKit vs MongoDB
+ */
+export const getSyncStatusAPI = async (): Promise<SyncStatusResponse> => {
+    const response = await apiClient.get('/images/sync-status');
+    if (response.data?.success) return response.data.data;
+    throw new Error(response.data?.message || 'Failed to fetch sync status');
+};
+
+/**
+ * Xóa folder "mồ côi" trên ImageKit (không có manga DB tương ứng)
+ */
+export const deleteOrphanFolderAPI = async (slug: string): Promise<string> => {
+    const response = await apiClient.delete(`/images/sync/orphan/${slug}`);
+    if (response.data?.success) return response.data.message;
+    throw new Error(response.data?.message || 'Failed to delete orphan folder');
+};
+
+/**
+ * Xóa bản ghi ImageUpload "mồ côi" trong DB
+ */
+export const deleteDbOnlyRecordsAPI = async (mangaName: string): Promise<string> => {
+    const response = await apiClient.delete(`/images/sync/db-only/${mangaName}`);
+    if (response.data?.success) return response.data.message;
+    throw new Error(response.data?.message || 'Failed to delete db-only records');
+};

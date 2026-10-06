@@ -40,16 +40,16 @@ const Login = () => {
     return (
         <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
             <div className="w-full max-w-6xl bg-base-100 rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 min-h-[600px]">
-                
+
                 {/* === CỘT TRÁI: ẢNH COVER (Chỉ hiện trên màn hình lớn) === */}
                 <div className="relative hidden lg:block h-full">
                     {/* Ảnh nền */}
-                    <img 
-                        src={ASSETS.AUTH_COVER} 
-                        alt="Login Cover" 
+                    <img
+                        src={ASSETS.AUTH_COVER}
+                        alt="Login Cover"
                         className="absolute inset-0 w-full h-full object-cover"
                     />
-                    
+
                     {/* Lớp phủ Gradient: Giúp chữ hiển thị rõ trên mọi loại ảnh */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
 
@@ -65,7 +65,7 @@ const Login = () => {
                 {/* === CỘT PHẢI: FORM ĐĂNG NHẬP === */}
                 <div className="flex flex-col justify-center p-8 md:p-14 lg:p-16">
                     <div className="w-full max-w-md mx-auto">
-                        
+
                         {/* Header của form */}
                         <div className="mb-8 text-center lg:text-left">
                             <h1 className="text-3xl font-extrabold text-base-content mb-2">
@@ -83,10 +83,10 @@ const Login = () => {
                                     <label className="label">
                                         <span className="label-text font-medium">Tên hiển thị</span>
                                     </label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Nhập tên hiển thị" 
-                                        className="input input-bordered w-full" 
+                                    <input
+                                        type="text"
+                                        placeholder="Nhập tên hiển thị"
+                                        className="input input-bordered w-full"
                                         value={displayName}
                                         onChange={(e) => setDisplayName(e.target.value)}
                                         required={!isLoginMode}
@@ -98,10 +98,10 @@ const Login = () => {
                                 <label className="label">
                                     <span className="label-text font-medium">Email</span>
                                 </label>
-                                <input 
-                                    type="email" 
-                                    placeholder="email@example.com" 
-                                    className="input input-bordered w-full" 
+                                <input
+                                    type="email"
+                                    placeholder="email@example.com"
+                                    className="input input-bordered w-full"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -112,10 +112,10 @@ const Login = () => {
                                 <label className="label">
                                     <span className="label-text font-medium">Mật khẩu</span>
                                 </label>
-                                <input 
-                                    type="password" 
-                                    placeholder="••••••••" 
-                                    className="input input-bordered w-full" 
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="input input-bordered w-full"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -133,7 +133,7 @@ const Login = () => {
                         </form>
 
                         <div className="mt-4 text-center text-sm">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsLoginMode(!isLoginMode)}
                                 className="link link-hover text-primary font-medium"

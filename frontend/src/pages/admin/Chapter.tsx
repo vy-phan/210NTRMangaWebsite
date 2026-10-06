@@ -6,7 +6,6 @@ import ChapterModal from '../../components/admin/ChapterModal';
 import { FiPlus, FiEdit, FiTrash2, FiImage, FiRefreshCw } from 'react-icons/fi';
 import ImageLibraryModal from '../../components/admin/ImageLibraryModal';
 import { getMangaTitleByIdAPI } from '../../api/mangaApi';
-import { deleteChapterImagesAPI } from '../../api/imageUpload';
 import { formatSmartTime } from '../../utils/dateFomat';
 
 const ChapterAdmin = () => {
@@ -108,28 +107,11 @@ const ChapterAdmin = () => {
             return;
         }
 
-        const deletePromise = async () => {
-            // 1. Xóa ảnh trên ImageKit và trong DB (nếu có mangaName)
-            if (mangaName) {
-                try {
-                    await deleteChapterImagesAPI(mangaName, chapter.number);
-                } catch (error) {
-                    console.error("Lỗi khi xóa ảnh của chương:", error);
-                    // Có thể throw lỗi hoặc vẫn tiếp tục xóa chapter tùy logic
-                    // Ở đây chọn tiếp tục xóa chapter
-                }
-            }
-
-            // 2. Xóa Chapter record
-            await deleteChapterAPI(chapter._id);
-            return 'Xóa chương và ảnh thành công!';
-        };
-
-        toast.promise(deletePromise(), {
+        toast.promise(deleteChapterAPI(chapter._id), {
             loading: 'Đang xóa chương và dọn dẹp ảnh...',
-            success: (msg) => {
+            success: () => {
                 setChapters(prev => prev.filter(c => c._id !== chapter._id));
-                return msg || 'Xóa thành công!';
+                return 'Xóa chương và ảnh thành công!';
             },
             error: 'Lỗi khi xóa chương.',
         });
@@ -151,29 +133,30 @@ const ChapterAdmin = () => {
         if (selectedIds.length === 0) return;
         if (!window.confirm(`Bạn có chắc muốn xóa ${selectedIds.length} chương đã chọn và toàn bộ ảnh của chúng?`)) return;
 
-        const chaptersToDelete = chapters.filter(c => selectedIds.includes(c._id));
+        const toastId = toast.loading(`Đang xóa ${selectedIds.length} chương và dọn dẹp ảnh...`);
 
-        const deletePromises = chaptersToDelete.map(async (chapter) => {
-            if (mangaName) {
-                try {
-                    await deleteChapterImagesAPI(mangaName, chapter.number);
-                } catch (error) {
-                    console.error("Lỗi khi xóa ảnh của chương:", error);
-                }
-            }
-            return deleteChapterAPI(chapter._id);
-        });
+        // Dùng allSettled để không bị cancel khi 1 request thất bại
+        const results = await Promise.allSettled(
+            selectedIds.map(id => deleteChapterAPI(id))
+        );
 
-        toast.promise(Promise.all(deletePromises), {
-            loading: `Đang xóa ${selectedIds.length} chương và dọn dẹp ảnh...`,
-            success: () => {
-                setChapters(prev => prev.filter(c => !selectedIds.includes(c._id)));
-                setSelectedIds([]);
-                setIsBulkDeleteMode(false);
-                return `Xóa ${selectedIds.length} chương thành công!`;
-            },
-            error: 'Lỗi khi xóa hàng loạt chương.',
-        });
+        const succeededIds = selectedIds.filter((_, i) => results[i].status === 'fulfilled');
+        const failedCount = results.filter(r => r.status === 'rejected').length;
+
+        // Cập nhật UI chỉ với các chapter đã xóa thành công
+        if (succeededIds.length > 0) {
+            setChapters(prev => prev.filter(c => !succeededIds.includes(c._id)));
+            setSelectedIds(prev => prev.filter(id => !succeededIds.includes(id)));
+        }
+
+        if (failedCount === 0) {
+            toast.success(`Xóa ${succeededIds.length} chương thành công!`, { id: toastId });
+            setIsBulkDeleteMode(false);
+        } else if (succeededIds.length === 0) {
+            toast.error(`Xóa thất bại tất cả ${failedCount} chương. Vui lòng thử lại.`, { id: toastId });
+        } else {
+            toast.error(`Xóa được ${succeededIds.length} chương, thất bại ${failedCount} chương.`, { id: toastId });
+        }
     };
 
     if (isLoading) return <div className="text-center p-8"><span className="loading loading-spinner loading-lg"></span></div>;

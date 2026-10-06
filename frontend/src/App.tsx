@@ -35,6 +35,7 @@ const BannerAdmin = lazy(() => import('./pages/admin/Banner'));
 const PromotionAdmin = lazy(() => import('./pages/admin/Promotion'));
 const NotificationAdmin = lazy(() => import('./pages/admin/Notification'));
 const ReportAdmin = lazy(() => import('./pages/admin/Report'));
+const StorageSyncAdmin = lazy(() => import('./pages/admin/StorageSync'));
 
 // Guards (Giữ nguyên import thường hoặc lazy đều được, nhưng import thường an toàn hơn cho logic)
 import AdminRouteGuard from './components/auth/AdminRouteGuard';
@@ -121,6 +122,7 @@ const App = () => {
                   <Route path="notifications" element={<NotificationAdmin />} />
                   <Route path="reports" element={<ReportAdmin />} />
                   <Route path="mangas/:mangaName/:mangaId" element={<ChapterAdmin />} />
+                  <Route path="storage-sync" element={<StorageSyncAdmin />} />
                 </Route>
               </Route>
 

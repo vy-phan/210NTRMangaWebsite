@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Manga from '../models/MangaModels';
 import asyncHandler from 'express-async-handler';
 import Chapter from '../models/ChapterModels';
+import { deleteMangaImagesHelper } from './ImageUploadControllers';
 
 /**
  * @desc    Get a single manga by its ID
@@ -207,10 +208,21 @@ export const deleteManga = asyncHandler(async (req: Request, res: Response) => {
         throw new Error("Manga not found, cannot delete");
     }
 
+    // Delete all images on ImageKit for this manga
+    try {
+        await deleteMangaImagesHelper(manga.slug);
+    } catch (error) {
+        console.error("Error deleting images from ImageKit:", error);
+        // Continue with deletion even if image deletion fails
+    }
+
+    // Delete all chapters of this manga
     await Chapter.deleteMany({ manga: id });
+    
+    // Delete the manga itself
     await Manga.findByIdAndDelete(id);
 
-    res.status(200).json({ success: true, message: "Manga deleted successfully" });
+    res.status(200).json({ success: true, message: "Manga and all its images deleted successfully" });
 });
 
 /**

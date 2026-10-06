@@ -113,12 +113,20 @@ const MangaAdmin = () => {
   };
 
   const handleDeleteManga = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa truyện này? Hành động này không thể hoàn tác.')) {
+    const mangaToDelete = mangas.find(m => m._id === id);
+    if (!mangaToDelete) return;
+
+    if (window.confirm(`Bạn có chắc chắn muốn xóa truyện:\n\n"${mangaToDelete.title}"\n\nvà toàn bộ chương + ảnh của nó? Hành động này không thể hoàn tác.`)) {
+      // Backend sẽ tự xử lý:
+      //   1. Xóa folder ảnh trên ImageKit (mangas/{slug})
+      //   2. Xóa bản ghi ImageUpload trong MongoDB
+      //   3. Xóa tất cả Chapter của Manga
+      //   4. Xóa Manga
       toast.promise(deleteMangaAPI(id), {
-        loading: 'Đang xóa truyện...',
+        loading: 'Đang xóa truyện và dọn dẹp ảnh...',
         success: () => {
           setMangas(prev => prev.filter(m => m._id !== id));
-          return 'Xóa truyện thành công!';
+          return 'Xóa truyện và ảnh thành công!';
         },
         error: 'Lỗi khi xóa truyện.',
       });

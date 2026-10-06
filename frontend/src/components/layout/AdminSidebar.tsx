@@ -11,7 +11,8 @@ import {
   FiMonitor,
   FiBell,
   FiFlag,
-  FiSettings
+  FiSettings,
+  FiCloud
 } from 'react-icons/fi';
 
 const AdminSidebar = () => {
@@ -104,6 +105,10 @@ const AdminSidebar = () => {
               <NavLink to="/admin/reports" className={navLinkClasses} onClick={closeMobileMenu}>
                 <FiFlag size={20} />
                 Danh sách báo cáo lỗi
+              </NavLink>
+              <NavLink to="/admin/storage-sync" className={navLinkClasses} onClick={closeMobileMenu}>
+                <FiCloud size={20} />
+                Storage Sync
               </NavLink>
             </nav>
           </div>

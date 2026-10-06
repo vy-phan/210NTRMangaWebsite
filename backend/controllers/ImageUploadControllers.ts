@@ -201,19 +201,12 @@ export const deleteImagesByChapter = asyncHandler(async (req: Request, res: Resp
 });
 
 /**
- * @desc    Xóa tất cả ảnh của một Manga (Folder) và cả folder đó trên ImageKit
- * @route   POST /api/images/delete-manga
- * @access  Private/Admin
+ * @desc    Helper function to delete all images of a manga from ImageKit and DB
+ * @param   mangaName - The name/slug of the manga
  */
-export const deleteImagesByManga = asyncHandler(async (req: Request, res: Response) => {
-    const { mangaName } = req.body;
-
+export const deleteMangaImagesHelper = async (mangaName: string): Promise<void> => {
     if (!mangaName) {
-        res.status(400).json({
-            success: false,
-            message: 'Manga name is required.'
-        });
-        return;
+        throw new Error('Manga name is required.');
     }
 
     // Đường dẫn folder trên ImageKit: mangas/Naruto
@@ -223,7 +216,6 @@ export const deleteImagesByManga = asyncHandler(async (req: Request, res: Respon
         // 1. Xóa folder trên ImageKit
         await imagekit.deleteFolder(folderPath);
         console.log(`Successfully deleted folder on ImageKit: ${folderPath}`);
-
     } catch (error: any) {
         if (error.statusCode !== 404) {
             console.error('ImageKit deleteFolder error:', error);
@@ -232,9 +224,59 @@ export const deleteImagesByManga = asyncHandler(async (req: Request, res: Respon
 
     // 2. Xóa sạch các bản ghi ảnh liên quan trong MongoDB
     const result = await ImageUpload.deleteMany({ mangaName });
+    console.log(`Deleted ${result.deletedCount} image records from MongoDB`);
+};
 
-    res.status(200).json({
-        success: true,
-        message: `Đã xóa ${result.deletedCount} bản ghi và thư mục truyện "${mangaName}" thành công.`,
+/**
+ * @desc    Helper function to delete all images of a chapter from ImageKit and DB
+ * @param   mangaName - The name/slug of the manga
+ * @param   chapter - The chapter number
+ */
+export const deleteChapterImagesHelper = async (mangaName: string, chapter: number): Promise<void> => {
+    // Fix: dùng kiểm tra tường minh thay vì !chapter (vì !0 === true gây bug khi chapter = 0)
+    if (!mangaName || chapter === undefined || chapter === null) {
+        throw new Error('Manga name and chapter are required.');
+    }
+
+    // Đường dẫn folder trên ImageKit: mangas/Naruto/1
+    const folderPath = `mangas/${mangaName}/${chapter}`;
+
+    try {
+        // 1. Xóa folder trên ImageKit
+        await imagekit.deleteFolder(folderPath);
+        console.log(`Successfully deleted folder on ImageKit: ${folderPath}`);
+    } catch (error: any) {
+        if (error.statusCode !== 404) {
+            console.error('ImageKit deleteFolder error:', error);
+        }
+    }
+
+    // 2. Xóa sạch các bản ghi ảnh liên quan trong MongoDB
+    const result = await ImageUpload.deleteMany({
+        mangaName,
+        chapter: chapter.toString()
     });
+    console.log(`Deleted ${result.deletedCount} image records from MongoDB`);
+};
+
+/**
+ * @desc    Xóa tất cả ảnh của một Manga (Folder) và cả folder đó trên ImageKit
+ * @route   POST /api/images/delete-manga
+ * @access  Private/Admin
+ */
+export const deleteImagesByManga = asyncHandler(async (req: Request, res: Response) => {
+    const { mangaName } = req.body;
+
+    try {
+        await deleteMangaImagesHelper(mangaName);
+        res.status(200).json({
+            success: true,
+            message: `Đã xóa thư mục truyện "${mangaName}" thành công.`,
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            message: error.message || 'Failed to delete manga images'
+        });
+    }
 });
