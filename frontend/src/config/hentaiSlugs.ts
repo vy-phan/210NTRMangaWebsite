@@ -8,12 +8,10 @@ export const hentaiSlugs = [
   'kanochi-x-netorare-kazoku-2',
   'akane-wa-tsumare-somerareru-1',
   'akane-wa-tsumare-somerareru-2',
-  'saimin-seishidou-1',
-  'saimin-seishidou-2',
-  'saimin-seishidou-3',
-  'saimin-seishidou-4',
   'yumemiru-otome-1',
   'yumemiru-otome-2',
   'yumemiru-otome-3',
+  'tonari-no-kanojo-1',
+  'yogoreta-kanojo-1', 
   
 ];
