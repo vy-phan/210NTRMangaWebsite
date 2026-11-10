@@ -1,9 +1,11 @@
 import os
 import re
 import time
+import base64
 import threading
 import ctypes
 import requests
+from urllib.parse import urlparse
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog
 from playwright.sync_api import sync_playwright
@@ -17,18 +19,24 @@ except Exception:
 
 class DamCoNuongDownloader:
     def __init__(self, log_callback):
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Referer': 'https://damconuong.pet/'
-        }
         self.log = log_callback
-        
-        # Khởi tạo Playwright Chromium chạy ngầm
         self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=True)
+
+        # Bật DNS over HTTPS (DoH) của Cloudflare để tránh lỗi net::ERR_CONNECTION_REFUSED do nhà mạng chặn
+        chromium_args = [
+            "--disable-blink-features=AutomationControlled",
+            "--enable-features=DnsOverHttps",
+            "--dns-over-https-templates=https://1.1.1.1/dns-query",
+            "--no-sandbox"
+        ]
+
+        self.browser = self.playwright.chromium.launch(
+            headless=True,
+            args=chromium_args
+        )
         self.context = self.browser.new_context(
-            user_agent=self.headers['User-Agent'],
-            extra_http_headers={'Referer': 'https://damconuong.pet/'}
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            ignore_https_errors=True
         )
 
     def close(self):
@@ -41,33 +49,69 @@ class DamCoNuongDownloader:
             pass
 
     def get_images(self, url):
-        """Chờ Javascript giải mã danh sách ảnh vào DOM"""
+        """Mở trang, cuộn để kích hoạt render Lazyload & giải mã Canvas"""
         page = None
         try:
             page = self.context.new_page()
-            page.goto(url, timeout=30000, wait_until="domcontentloaded")
             
-            # Chờ ảnh render ra thẻ img (tối đa 12 giây)
+            # Gán referer đúng domain gốc của URL đang cào
+            parsed = urlparse(url)
+            root_domain = f"{parsed.scheme}://{parsed.netloc}/"
+            page.set_extra_http_headers({"Referer": root_domain})
+
+            # Tăng thời gian chờ và chấp nhận kết nối
+            page.goto(url, timeout=45000, wait_until="domcontentloaded")
+            
             try:
-                page.wait_for_selector("#chapter-content img, .chapter-img", timeout=12000)
+                page.wait_for_selector("#chapter-content, .chapter-img", timeout=12000)
             except Exception:
                 pass
 
-            # Lấy toàn bộ link ảnh hợp lệ
-            image_urls = page.evaluate("""
-                () => {
-                    const imgs = document.querySelectorAll('#chapter-content img, .chapter-img');
-                    const urls = [];
-                    imgs.forEach(img => {
-                        const src = img.getAttribute('data-src') || img.getAttribute('src');
-                        if (src && !src.startsWith('data:image') && !src.includes('svg')) {
-                            urls.push(src.trim());
-                        }
+            # Cuộn trang từ từ xuống đáy để kích hoạt nạp ảnh và vẽ Canvas
+            page.evaluate("""
+                async () => {
+                    await new Promise((resolve) => {
+                        let totalHeight = 0;
+                        let distance = 350;
+                        let timer = setInterval(() => {
+                            let scrollHeight = document.body.scrollHeight;
+                            window.scrollBy(0, distance);
+                            totalHeight += distance;
+                            if (totalHeight >= scrollHeight) {
+                                clearInterval(timer);
+                                resolve();
+                            }
+                        }, 80);
                     });
-                    return urls;
                 }
             """)
-            return image_urls
+            page.wait_for_timeout(2000)  # Đợi 2 giây để mã giải mã Canvas hoàn tất
+
+            # Trích xuất cả link ảnh thường lẫn ảnh được vẽ trên Canvas (dưới dạng Base64)
+            items = page.evaluate("""
+                () => {
+                    const elements = document.querySelectorAll('#chapter-content .chapter-img');
+                    const results = [];
+                    elements.forEach(el => {
+                        const tag = el.tagName.toLowerCase();
+                        if (tag === 'img') {
+                            const src = el.getAttribute('data-src') || el.getAttribute('src');
+                            if (src && !src.includes('svg')) {
+                                results.push({ type: 'url', data: src.trim() });
+                            }
+                        } else if (tag === 'canvas') {
+                            try {
+                                const dataUrl = el.toDataURL('image/png');
+                                if (dataUrl && dataUrl.startsWith('data:image')) {
+                                    results.push({ type: 'base64', data: dataUrl });
+                                }
+                            } catch (e) {}
+                        }
+                    });
+                    return results;
+                }
+            """)
+            return items
         except Exception as e:
             self.log(f"   [!] Lỗi khi cào URL {url}: {e}")
             return []
@@ -78,16 +122,33 @@ class DamCoNuongDownloader:
                 except Exception:
                     pass
 
-    def download_and_save_image(self, img_url, save_path):
-        """Tải trực tiếp byte ảnh về đĩa cứng"""
+    def download_and_save_image(self, item, save_path, current_page_url):
+        """Lưu ảnh: giải mã Base64 (đối với Canvas) hoặc tải qua HTTP với Referer hợp lệ"""
         try:
-            resp = requests.get(img_url, headers=self.headers, timeout=20)
+            # 1. Trường hợp ảnh Canvas (Base64)
+            if item.get("type") == "base64":
+                base64_data = item["data"].split("base64,")[-1]
+                img_bytes = base64.b64decode(base64_data)
+                with open(save_path, "wb") as f:
+                    f.write(img_bytes)
+                return True
+
+            # 2. Trường hợp ảnh qua link URL thông thường
+            img_url = item.get("data")
+            parsed = urlparse(current_page_url)
+            root_domain = f"{parsed.scheme}://{parsed.netloc}/"
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Referer": root_domain
+            }
+            resp = requests.get(img_url, headers=headers, timeout=25)
             resp.raise_for_status()
-            with open(save_path, 'wb') as f:
+            with open(save_path, "wb") as f:
                 f.write(resp.content)
             return True
         except Exception as e:
-            self.log(f"   [!] Lỗi tải ảnh {img_url}: {e}")
+            self.log(f"   [!] Lỗi lưu ảnh: {e}")
             return False
 
 
@@ -101,7 +162,7 @@ class MangaDownloaderApp:
         self.is_paused = False
         self.is_stopped = False
 
-        self.base_url_var = tk.StringVar(value="https://damconuong.pet/truyen/good-wife/oneshot")
+        self.base_url_var = tk.StringVar(value="https://damconuong.win/truyen/sieu-pham-ntr/chap-")
         self.save_dir_var = tk.StringVar(value=os.path.join(os.path.expanduser("~"), "Downloads"))
         self.start_idx_var = tk.StringVar(value="1")
         self.end_idx_var = tk.StringVar(value="1")
@@ -186,12 +247,14 @@ class MangaDownloaderApp:
         self.is_paused = False
         self.write_log("🛑 Đang gửi tín hiệu dừng...")
 
-    def get_file_extension(self, url):
-        clean_url = url.split('?')[0]
+    def get_file_extension(self, item):
+        if item.get("type") == "base64":
+            return ".png"
+        clean_url = item.get("data", "").split('?')[0]
         ext = os.path.splitext(clean_url)[1].lower()
         if ext in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
             return ext
-        return '.jpg'
+        return '.webp'
 
     def start_process(self):
         url_input = self.base_url_var.get().strip()
@@ -204,11 +267,9 @@ class MangaDownloaderApp:
             messagebox.showerror("Lỗi", "Thư mục lưu trữ không tồn tại!")
             return
 
-        # Kiểm tra xem link có phải là Oneshot không
         is_oneshot = "oneshot" in url_input.lower()
         start_idx, end_idx = 1, 1
 
-        # Nếu KHÔNG phải Oneshot thì mới bắt buộc kiểm tra số chương bắt đầu & kết thúc
         if not is_oneshot:
             try:
                 start_idx = int(self.start_idx_var.get().strip())
@@ -235,20 +296,19 @@ class MangaDownloaderApp:
         thread.start()
 
     def download_chapter_images(self, downloader, chapter_url, chapter_folder, label_text):
-        """Hàm hỗ trợ tải danh sách ảnh của 1 chương cụ thể"""
         os.makedirs(chapter_folder, exist_ok=True)
         self.write_log(f"\n👉 [{label_text}] Đang lấy danh sách ảnh: {chapter_url}")
-        img_urls = downloader.get_images(chapter_url)
+        items = downloader.get_images(chapter_url)
 
-        if not img_urls:
+        if not items:
             self.write_log(f"   [!] Không tìm thấy ảnh nào.")
             return False
 
-        total_imgs = len(img_urls)
-        self.write_log(f"   [+] Tìm thấy {total_imgs} ảnh. Đang tải vào '{os.path.basename(chapter_folder)}'...")
+        total_imgs = len(items)
+        self.write_log(f"   [+] Tìm thấy {total_imgs} ảnh (bao gồm ảnh thường & canvas). Đang tải...")
 
         saved_count = 0
-        for idx, img_url in enumerate(img_urls, start=1):
+        for idx, item in enumerate(items, start=1):
             if self.is_stopped:
                 break
             while self.is_paused:
@@ -256,11 +316,11 @@ class MangaDownloaderApp:
                     break
                 time.sleep(0.5)
 
-            ext = self.get_file_extension(img_url)
+            ext = self.get_file_extension(item)
             filename = f"{idx:03d}{ext}"
             save_path = os.path.join(chapter_folder, filename)
 
-            if downloader.download_and_save_image(img_url, save_path):
+            if downloader.download_and_save_image(item, save_path, chapter_url):
                 saved_count += 1
 
         if self.is_stopped:
@@ -284,28 +344,20 @@ class MangaDownloaderApp:
         try:
             downloader = DamCoNuongDownloader(log_callback=self.write_log)
 
-            # TRƯỜNG HỢP 1: ONESHOT (Chỉ tải 1 link đơn lẻ duy nhất)
             if is_oneshot:
-                self.write_log(f"📌 Chế độ: Tải Oneshot (bỏ qua số thứ tự chương)")
-                
-                # Tự động lấy tên thư mục từ link (Ví dụ: good-wife - oneshot)
+                self.write_log(f"📌 Chế độ: Tải Oneshot")
                 clean_url = base_url.rstrip('/')
                 parts = [p for p in clean_url.split('/') if p]
-                if len(parts) >= 2 and parts[-2] != 'truyen':
-                    folder_name = f"{parts[-2]} - {parts[-1]}"
-                else:
-                    folder_name = parts[-1] if parts else "Oneshot"
-
+                folder_name = f"{parts[-2]} - {parts[-1]}" if len(parts) >= 2 else "Oneshot"
                 chapter_folder = os.path.join(save_dir, folder_name)
+
                 success = self.download_chapter_images(downloader, base_url, chapter_folder, "Oneshot")
                 if success:
                     success_chap += 1
                 else:
                     fail_chap += 1
-
-            # TRƯỜNG HỢP 2: DANH SÁCH CHƯƠNG THƯỜNG (chapter-1, chapter-2, ...)
             else:
-                # Chuẩn hóa link Base URL dạng chapter-
+                # Chuẩn hóa link để luôn kết thúc bằng gạch nối hoặc gạch chéo
                 base_url = re.sub(r'(\d+)/?$', '', base_url.strip())
                 if not base_url.endswith('-') and not base_url.endswith('/'):
                     base_url += '-'
