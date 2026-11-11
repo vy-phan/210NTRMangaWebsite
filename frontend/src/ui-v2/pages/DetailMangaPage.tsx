@@ -91,7 +91,7 @@ const DetailMangaPage: React.FC = () => {
     let list = [...chapters];
     if (chapterQuery.trim()) {
       const q = chapterQuery.trim().toLowerCase();
-      list = list.filter((c) => String(c.number).includes(q) || (c.title || '').toLowerCase().includes(q));
+      list = list.filter((c) => String(c.number + 1).includes(q) || (c.title || '').toLowerCase().includes(q));
     }
     list.sort((a, b) => (sortAsc ? a.number - b.number : b.number - a.number));
     return list;
@@ -110,7 +110,7 @@ const DetailMangaPage: React.FC = () => {
     }
     if (firstChapter) {
       return {
-        number: firstChapter.number,
+        number: firstChapter.number + 1, // URL/hiển thị 1-based
         label: isOneshot ? 'Đọc Oneshot' : 'Đọc từ đầu',
       };
     }
@@ -272,9 +272,9 @@ const DetailMangaPage: React.FC = () => {
                     <FiBookOpen size={16} /> {readTarget.label}
                   </Link>
                 )}
-                {latestChapter && (!readTarget || latestChapter.number !== readTarget.number) && (
+                {latestChapter && (!readTarget || latestChapter.number + 1 !== readTarget.number) && (
                   <Link
-                    to={`/ntr/manga/${manga.slug}/chapter/${latestChapter.number}`}
+                    to={`/ntr/manga/${manga.slug}/chapter/${latestChapter.number + 1}`}
                     className="btn-ghost"
                   >
                     Chương mới nhất
@@ -324,13 +324,14 @@ const DetailMangaPage: React.FC = () => {
             </p>
           ) : (
             sortedChapters.map((ch) => {
-              const read = readSet.has(ch.number);
-              const isReading = ch.number === readingChapter;
+              const displayNum = ch.number + 1; // URL/hiển thị 1-based
+              const read = readSet.has(displayNum);
+              const isReading = displayNum === readingChapter;
               return (
                 <Link
                   key={ch._id}
-                  id={`ch-row-${ch.number}`}
-                  to={`/ntr/manga/${manga.slug}/chapter/${ch.number}`}
+                  id={`ch-row-${displayNum}`}
+                  to={`/ntr/manga/${manga.slug}/chapter/${displayNum}`}
                   className={`flex items-center gap-3 min-h-[48px] px-4 py-2.5 transition-colors hover:bg-surface-2 ${
                     isReading ? 'bg-accent-soft' : read ? 'opacity-55' : ''
                   }`}
@@ -342,11 +343,11 @@ const DetailMangaPage: React.FC = () => {
                       color: isReading ? '#fff' : 'var(--ink-muted)',
                     }}
                   >
-                    {ch.number}
+                    {displayNum}
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className={`block text-sm truncate ${isReading ? 'text-accent font-bold' : 'text-ink font-medium'}`}>
-                      {chapterLabel(ch.number, ch.title)}
+                      {chapterLabel(displayNum, ch.title)}
                     </span>
                   </span>
                   {isReading ? (

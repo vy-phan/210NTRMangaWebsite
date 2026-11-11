@@ -9,10 +9,19 @@ interface MangaCardProps {
   progress?: number;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  Ongoing: 'Đang ra',
+  Completed: 'Hoàn thành',
+  Hiatus: 'Tạm ngưng',
+  Cancelled: 'Đã hủy',
+};
+
 const statusShort = (status?: string): { label: string; cls: string } | null => {
-  if (status === 'Ongoing') return { label: 'Đang ra', cls: 'bg-rind-soft text-rind' };
-  if (status === 'Completed') return { label: 'Hoàn thành', cls: 'bg-surface text-ink-muted border-line' };
-  return null;
+  if (!status) return null;
+  const label = STATUS_LABEL[status] || status;
+  if (status === 'Ongoing') return { label, cls: 'bg-warn-soft text-warn' };
+  if (status === 'Completed') return { label, cls: 'bg-rind-soft text-rind' };
+  return { label, cls: 'bg-danger-soft text-danger' };
 };
 
 const MangaCard: React.FC<MangaCardProps> = ({ manga, progress }) => {
@@ -33,7 +42,6 @@ const MangaCard: React.FC<MangaCardProps> = ({ manga, progress }) => {
         {badge && (
           <span
             className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${badge.cls}`}
-            style={{ background: 'var(--surface)' }}
           >
             {badge.label}
           </span>
@@ -43,7 +51,7 @@ const MangaCard: React.FC<MangaCardProps> = ({ manga, progress }) => {
             className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
             style={{ background: 'rgba(11,12,16,0.72)', backdropFilter: 'blur(4px)' }}
           >
-            Ch.{latestCh.number}
+            Ch.{latestCh.number + 1}
           </span>
         )}
         {typeof progress === 'number' && progress > 0 && (

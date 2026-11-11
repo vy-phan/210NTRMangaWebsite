@@ -11,8 +11,10 @@ import { getChapterOffline } from '../../utils/offlineDB';
 import ReaderImage from '../components/ReaderImage';
 import {
   FiArrowLeft, FiChevronLeft, FiChevronRight, FiSettings,
-  FiX, FiBookOpen, FiRefreshCw, FiWifiOff, FiPlay, FiPause, FiList,
+  FiBookOpen, FiRefreshCw, FiWifiOff, FiPlay, FiPause, FiList,
 } from 'react-icons/fi';
+import ChapterSheet from '../components/ChapterSheet';
+import ReaderSettingsSheet from '../components/ReaderSettingsSheet';
 import '../styles/theme.css';
 import '../lib/uiStore';
 
@@ -31,7 +33,6 @@ const DetailChapterPage: React.FC = () => {
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   const readerWidth = useUiStore((s) => s.readerWidth);
-  const readerGap = useUiStore((s) => s.readerGap);
 
   const [toolbarVisible, setToolbarVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -49,12 +50,20 @@ const DetailChapterPage: React.FC = () => {
   const images = useMemo(() => chapter?.images || [], [chapter]);
   const totalPages = images.length;
 
+  // Backend lưu chapter.number 0-based → URL/hiển thị = number + 1
+  const dbChapterNum = chapterNum - 1;
+
   const sortedChapters = useMemo(() => [...chapterList].sort((a, b) => a.number - b.number), [chapterList]);
-  const currentIndex = sortedChapters.findIndex((c) => c.number === chapterNum);
+  const currentIndex = sortedChapters.findIndex((c) => c.number === dbChapterNum);
   const prevChapter = currentIndex > 0 ? sortedChapters[currentIndex - 1] : null;
   const nextChapter = currentIndex >= 0 && currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIndex + 1] : null;
 
-  const mangaId = chapter?.manga || mangaInfo?._id || '';
+  // chapter.manga có thể là string id hoặc object populate
+  const rawManga = chapter?.manga as unknown;
+  const mangaId =
+    (typeof rawManga === 'string' ? rawManga : (rawManga as { _id?: string })?._id) ||
+    mangaInfo?._id ||
+    '';
 
   // ─── Fetch ────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -62,17 +71,25 @@ const DetailChapterPage: React.FC = () => {
     setIsLoading(true);
     setLoadError(false);
     try {
-      const res = await getChapterByNumberAPI(slug, chapterNum);
+      const res = await getChapterByNumberAPI(slug, dbChapterNum);
       if (res?.chapter) {
         setChapter(res.chapter);
         setIsOfflineMode(false);
-        if (res.chapter.manga) {
-          getChaptersByMangaIdAPI(res.chapter.manga).then(setChapterList).catch(() => {});
+        const mid =
+          typeof res.chapter.manga === 'string'
+            ? res.chapter.manga
+            : (res.chapter.manga as unknown as { _id?: string })?._id;
+        if (mid) {
+          getChaptersByMangaIdAPI(mid).then(setChapterList).catch(() => {});
         }
         getMangaBySlugAPI(slug)
           .then((m) => {
             setMangaInfo(m);
-            addToHistory(m, { _id: res.chapter._id, number: res.chapter.number, title: res.chapter.title });
+            addToHistory(m, {
+              _id: res.chapter._id,
+              number: res.chapter.number + 1, // lưu số hiển thị (1-based)
+              title: res.chapter.title,
+            });
           })
           .catch(() => {});
       } else {
@@ -80,7 +97,7 @@ const DetailChapterPage: React.FC = () => {
       }
     } catch (err) {
       try {
-        const offline = await getChapterOffline(slug, chapterNum);
+        const offline = await getChapterOffline(slug, dbChapterNum);
         if (offline) {
           setChapter(offline as unknown as Chapter);
           setIsOfflineMode(true);
@@ -233,17 +250,17 @@ const DetailChapterPage: React.FC = () => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      if (e.key === 'ArrowLeft' && prevChapter) navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number}`);
-      if (e.key === 'ArrowRight' && nextChapter) navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number}`);
-      if (e.key === '[' && prevChapter) navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number}`);
-      if (e.key === ']' && nextChapter) navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number}`);
+      if (e.key === 'ArrowLeft' && prevChapter) navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number + 1}`);
+      if (e.key === 'ArrowRight' && nextChapter) navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number + 1}`);
+      if (e.key === '[' && prevChapter) navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number + 1}`);
+      if (e.key === ']' && nextChapter) navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number + 1}`);
       if (e.key.toLowerCase() === 'm') setToolbarVisible((v) => !v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [prevChapter, nextChapter, slug, navigate]);
 
-  const progressPct = totalPages === 0 ? 0 : Math.min(100, (currentPage / Math.max(1, totalPages - 1)) * 100);
+  const pageLabel = totalPages > 0 ? `${currentPage + 1}/${totalPages}` : '—';
   const chapterTitle = chapterLabel(chapterNum, chapter?.title);
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -274,7 +291,7 @@ const DetailChapterPage: React.FC = () => {
           {/* Chương trước / Chương sau */}
           <button
             disabled={!prevChapter}
-            onClick={() => prevChapter && navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number}`)}
+            onClick={() => prevChapter && navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number + 1}`)}
             className="p-2 rounded-lg reader-muted hover:text-white disabled:opacity-30 transition-colors shrink-0"
             aria-label="Chương trước"
             title="Chương trước"
@@ -283,7 +300,7 @@ const DetailChapterPage: React.FC = () => {
           </button>
           <button
             disabled={!nextChapter}
-            onClick={() => nextChapter && navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number}`)}
+            onClick={() => nextChapter && navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number + 1}`)}
             className="p-2 rounded-lg reader-muted hover:text-white disabled:opacity-30 transition-colors shrink-0"
             aria-label="Chương sau"
             title="Chương sau"
@@ -336,7 +353,7 @@ const DetailChapterPage: React.FC = () => {
         ) : (
           <div
             className="mx-auto flex flex-col items-center"
-            style={{ maxWidth: readerWidth, gap: readerGap }}
+            style={{ maxWidth: readerWidth }}
             onClick={toggleToolbar}
           >
             {images.map((img, idx) => (
@@ -365,7 +382,7 @@ const DetailChapterPage: React.FC = () => {
               <h3 className="font-display text-lg font-bold text-ink">Hết {chapterTitle}</h3>
               {nextChapter ? (
                 <Link
-                  to={`/ntr/manga/${slug}/chapter/${nextChapter.number}`}
+                  to={`/ntr/manga/${slug}/chapter/${nextChapter.number + 1}`}
                   className="btn-primary mt-4"
                 >
                   Chương tiếp theo <FiChevronRight size={16} />
@@ -381,29 +398,28 @@ const DetailChapterPage: React.FC = () => {
         )}
       </div>
 
-      {/* Thanh dưới: tiến độ + chuyển chương */}
+      {/* Thanh dưới: chuyển chương */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-200 ${toolbarVisible ? 'translate-y-0' : 'translate-y-full'}`}
         style={{ background: 'rgba(11,12,16,0.92)', backdropFilter: 'blur(12px)', borderTop: '1px solid var(--reader-line)' }}
       >
-        <div className="h-[3px] w-full" style={{ background: 'var(--reader-line)' }}>
-          <div className="h-full transition-all duration-150" style={{ width: `${progressPct}%`, background: 'var(--accent)' }} />
-        </div>
-        <div className="max-w-6xl mx-auto px-3 h-12 flex items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto px-3 h-16 flex items-center justify-between gap-3">
           <button
             disabled={!prevChapter}
-            onClick={() => prevChapter && navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number}`)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium reader-muted hover:text-white disabled:opacity-30 transition-colors"
+            onClick={() => prevChapter && navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number + 1}`)}
+            className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold reader-muted hover:text-white disabled:opacity-30 transition-colors"
+            style={{ border: '1px solid var(--reader-line)' }}
           >
-            <FiChevronLeft size={16} /> <span className="hidden sm:inline">Chương trước</span>
+            <FiChevronLeft size={20} /> <span>Chương trước</span>
           </button>
-          <span className="text-xs reader-muted tabular-nums">{totalPages > 0 ? `${currentPage + 1}/${totalPages}` : '—'}</span>
+          <span className="text-xs reader-muted tabular-nums shrink-0">{pageLabel}</span>
           <button
             disabled={!nextChapter}
-            onClick={() => nextChapter && navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number}`)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium reader-muted hover:text-white disabled:opacity-30 transition-colors"
+            onClick={() => nextChapter && navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number + 1}`)}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-30"
+            style={{ background: 'var(--accent)' }}
           >
-            <span className="hidden sm:inline">Chương sau</span> <FiChevronRight size={16} />
+            <span>Chương sau</span> <FiChevronRight size={20} />
           </button>
         </div>
       </div>
@@ -421,164 +437,6 @@ const DetailChapterPage: React.FC = () => {
           onClose={() => setChapterSheetOpen(false)}
         />
       )}
-    </div>
-  );
-};
-
-// ─── Ngăn kéo cài đặt trình đọc (chỉ cuộn dọc) ──────────────────────────────
-const ReaderSettingsSheet: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const readerWidth = useUiStore((s) => s.readerWidth);
-  const setReaderWidth = useUiStore((s) => s.setReaderWidth);
-  const readerGap = useUiStore((s) => s.readerGap);
-  const setReaderGap = useUiStore((s) => s.setReaderGap);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={onClose} />
-      <div
-        className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 pb-8 space-y-5"
-        style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Cài đặt trình đọc"
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="font-display font-bold text-ink">Cài đặt đọc</h3>
-          <button onClick={onClose} className="p-2 text-ink-muted hover:text-ink" aria-label="Đóng">
-            <FiX size={18} />
-          </button>
-        </div>
-
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-ink">Độ rộng tối đa</span>
-            <span className="text-ink-muted">{readerWidth}px</span>
-          </div>
-          <input type="range" min={480} max={1200} step={20} value={readerWidth} onChange={(e) => setReaderWidth(Number(e.target.value))} className="w-full accent-[var(--accent)]" />
-        </div>
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-ink">Khoảng cách giữa các trang</span>
-            <span className="text-ink-muted">{readerGap}px</span>
-          </div>
-          <input type="range" min={0} max={40} step={4} value={readerGap} onChange={(e) => setReaderGap(Number(e.target.value))} className="w-full accent-[var(--accent)]" />
-        </div>
-        <p className="text-[11px] text-ink-muted">Cuộn dọc là chế độ đọc mặc định. Chạm vào ảnh để ẩn/hiện thanh công cụ.</p>
-      </div>
-    </div>
-  );
-};
-
-// ─── Ngăn kéo danh sách chương ──────────────────────────────────────────────
-const ChapterSheet: React.FC<{
-  slug: string;
-  chapters: Chapter[];
-  currentNumber: number;
-  mangaId: string;
-  onClose: () => void;
-}> = ({ slug, chapters, currentNumber, mangaId, onClose }) => {
-  const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-  // subscribe để mờ chương đã đọc
-  const progressData = useProgressStore((s) => s.data);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const sorted = useMemo(() => {
-    void progressData;
-    let list = [...chapters].sort((a, b) => b.number - a.number); // mới trước
-    const q = query.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (c) => String(c.number).includes(q) || (c.title || '').toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [chapters, query, progressData]);
-
-  const isRead = (n: number) => !!mangaId && useProgressStore.getState().isRead(mangaId, n);
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={onClose} />
-      <div
-        className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[75dvh]"
-        style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Danh sách chương"
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-line">
-          <p className="font-display font-bold text-ink">Chương truyện <span className="text-sm font-normal text-ink-muted">({chapters.length})</span></p>
-          <button onClick={onClose} className="p-2 text-ink-muted hover:text-ink" aria-label="Đóng">
-            <FiX size={18} />
-          </button>
-        </div>
-
-        <div className="px-4 py-2.5 border-b border-line">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Lọc theo số hoặc tên chương…"
-            className="input !py-2 !min-h-0 !text-[13px]"
-            autoFocus
-          />
-        </div>
-
-        <div className="overflow-y-auto p-2 pb-6">
-          {sorted.length === 0 ? (
-            <p className="text-sm text-ink-muted text-center py-8">Không có chương khớp bộ lọc.</p>
-          ) : (
-            sorted.map((ch) => {
-              const current = ch.number === currentNumber;
-              const read = isRead(ch.number);
-              return (
-                <button
-                  key={ch._id}
-                  onClick={() => {
-                    onClose();
-                    navigate(`/ntr/manga/${slug}/chapter/${ch.number}`);
-                  }}
-                  className={`w-full flex items-center gap-3 min-h-[44px] px-3 py-2 rounded-xl text-left transition-colors ${
-                    current ? 'bg-accent-soft' : 'hover:bg-surface-2'
-                  } ${read && !current ? 'opacity-55' : ''}`}
-                >
-                  <span
-                    className="w-9 shrink-0 text-center text-[13px] font-semibold rounded-md py-1"
-                    style={{
-                      background: current ? 'var(--accent)' : 'var(--surface-2)',
-                      color: current ? '#fff' : 'var(--ink-muted)',
-                    }}
-                  >
-                    {ch.number}
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className={`block text-sm truncate ${current ? 'text-accent font-semibold' : 'text-ink font-medium'}`}>
-                      {chapterLabel(ch.number, ch.title)}
-                    </span>
-                    {ch.createdAt && (
-                      <span className="block text-[11px] text-ink-muted">
-                        {new Date(ch.createdAt).toLocaleDateString('vi-VN')}
-                      </span>
-                    )}
-                  </span>
-                  {current && <span className="text-[11px] font-bold text-accent shrink-0">Đang đọc</span>}
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
     </div>
   );
 };

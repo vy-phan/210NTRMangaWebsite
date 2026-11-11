@@ -70,21 +70,6 @@ const SettingsPage: React.FC = () => {
             className="w-full accent-[var(--accent)]"
           />
         </div>
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-sm font-medium text-ink">Khoảng cách giữa các trang</p>
-            <span className="text-xs text-ink-muted">{ui.readerGap}px</span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={40}
-            step={4}
-            value={ui.readerGap}
-            onChange={(e) => ui.setReaderGap(Number(e.target.value))}
-            className="w-full accent-[var(--accent)]"
-          />
-        </div>
       </section>
 
       {/* Dữ liệu trên máy */}

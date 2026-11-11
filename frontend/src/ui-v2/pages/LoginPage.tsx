@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { loginAPI, registerAPI } from '../../api/authApi';
+import { useAuthStore } from '../lib/auth';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiArrowLeft } from 'react-icons/fi';
 
 const LoginPage: React.FC = () => {
@@ -26,6 +27,7 @@ const LoginPage: React.FC = () => {
         setMode('login');
       } else {
         await loginAPI({ email, password });
+        await useAuthStore.getState().fetch(); // cập nhật avatar/user trên Navbar
         toast.success('Đăng nhập thành công!');
         navigate('/ntr');
       }

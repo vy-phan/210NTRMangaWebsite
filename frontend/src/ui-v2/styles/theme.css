@@ -19,6 +19,8 @@
   --accent-soft: rgba(232, 70, 108, 0.1);
   --rind: #249668;
   --rind-soft: rgba(36, 150, 104, 0.12);
+  --warn: #B45309;
+  --warn-soft: rgba(217, 119, 6, 0.12);
   --danger: #D63E3E;
   --danger-soft: rgba(214, 62, 62, 0.1);
   --reader-bg: #0B0C10;
@@ -41,6 +43,8 @@
   --accent-soft: rgba(255, 94, 130, 0.14);
   --rind: #3EC48F;
   --rind-soft: rgba(62, 196, 143, 0.14);
+  --warn: #FBBF24;
+  --warn-soft: rgba(251, 191, 36, 0.14);
   --danger: #FF6B6B;
   --danger-soft: rgba(255, 107, 107, 0.12);
   --reader-bg: #0B0C10;
@@ -98,11 +102,7 @@ body {
   border-radius: 4px;
 }
 
-@media (hover: none) {
-  *:hover {
-    /* Tránh trạng thái "dính" trên cảm ứng */
-  }
-}
+/* Tránh trạng thái "dính" trên cảm ứng: không có hover thật nên không cần rule */
 
 /* ─── Semantic helpers ───────────────────────────────────────────────────── */
 .bg-app { background-color: var(--bg); }
@@ -116,7 +116,9 @@ body {
 .bg-accent { background-color: var(--accent); }
 .bg-accent-soft { background-color: var(--accent-soft); }
 .bg-rind-soft { background-color: var(--rind-soft); }
+.bg-warn-soft { background-color: var(--warn-soft); }
 .bg-danger-soft { background-color: var(--danger-soft); }
+.text-warn { color: var(--warn); }
 .border-line { border-color: var(--line); }
 .border-accent { border-color: var(--accent); }
 

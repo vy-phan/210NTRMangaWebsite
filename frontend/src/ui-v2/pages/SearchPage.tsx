@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import apiClient from '../../api/apiClient';
+import { getAllMangasAPI } from '../../api/mangaApi';
 import { getAllGenresAPI } from '../../api/genreApi';
 import { FiSearch, FiSliders, FiX } from 'react-icons/fi';
 import MangaGrid from '../components/MangaGrid';
@@ -19,7 +19,6 @@ const STATUS_OPTIONS = [
   { key: 'Ongoing', label: 'Đang tiến hành' },
   { key: 'Completed', label: 'Hoàn thành' },
   { key: 'Hiatus', label: 'Tạm ngưng' },
-  { key: 'Cancelled', label: 'Đã hủy' },
 ];
 
 const parseCsv = (v: string | null): string[] => (v ? v.split(',').filter(Boolean) : []);
@@ -84,46 +83,33 @@ const SearchPage: React.FC = () => {
   const excList = parseCsv(searchParams.get('exc'));
 
   const [inputVal, setInputVal] = useState(query);
-  const [results, setResults] = useState<Manga[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [allMangas, setAllMangas] = useState<Manga[]>([]);
+  const [loading, setLoading] = useState(true);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Backend không có API search → tải toàn bộ 1 lần rồi lọc phía client (giống UI cũ)
+  useEffect(() => {
+    let alive = true;
+    Promise.all([getAllMangasAPI(), getAllGenresAPI()])
+      .then(([mangas, gs]) => {
+        if (!alive) return;
+        setAllMangas(mangas || []);
+        setGenres(gs || []);
+      })
+      .catch(() => {
+        if (alive) setAllMangas([]);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Đồng bộ input khi URL đổi (back/forward)
   useEffect(() => setInputVal(query), [query]);
-
-  // Debounce 300ms
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!query.trim()) {
-      setResults([]);
-      setSearched(false);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await apiClient.get(`/manga/search?q=${encodeURIComponent(query)}`);
-        if (res.data?.success) setResults(res.data.data || []);
-        setSearched(true);
-      } catch (err) {
-        console.error('Search error:', err);
-        setSearched(true);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query]);
-
-  useEffect(() => {
-    getAllGenresAPI().then(setGenres).catch(() => {});
-  }, []);
 
   const updateParams = (patch: Record<string, string | null>) => {
     const next = new URLSearchParams(searchParams);
@@ -139,10 +125,21 @@ const SearchPage: React.FC = () => {
   const activeFilterCount =
     (sort !== 'update' ? 1 : 0) + statusList.length + incList.length + excList.length;
 
-  const filtered = useMemo(
-    () => applyFilters(results, { sort: sort as SortKey, status: statusList, inc: incList, exc: excList }),
-    [results, sort, statusList.join(','), incList.join(','), excList.join(',')] // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const base = q
+      ? allMangas.filter((m) => {
+          const hay = `${m.title} ${m.description || ''} ${m.author || ''}`.toLowerCase();
+          return hay.includes(q);
+        })
+      : allMangas;
+    return applyFilters(base, { sort: sort as SortKey, status: statusList, inc: incList, exc: excList });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allMangas, query, sort, statusList.join(','), incList.join(','), excList.join(',')]);
+
+  const hasQuery = query.trim().length > 0;
+  // idle = URL hoàn toàn trống (chưa chọn sort/filter, chưa có từ khóa)
+  const idle = !hasQuery && activeFilterCount === 0 && !searchParams.get('sort');
 
   // Thể loại 3 trạng thái: chạm 1 = phải có, chạm 2 = loại trừ, chạm 3 = bỏ
   const cycleGenre = (key: string) => {
@@ -178,9 +175,9 @@ const SearchPage: React.FC = () => {
           {SORT_OPTIONS.map((o) => (
             <button
               key={o.key}
-              onClick={() => updateParams({ sort: o.key === 'update' ? null : o.key })}
+              onClick={() => updateParams({ sort: o.key })}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                (sort || 'update') === o.key ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-muted hover:bg-surface-2 hover:text-ink'
+                sort === o.key ? 'bg-accent-soft text-accent font-semibold' : 'text-ink-muted hover:bg-surface-2 hover:text-ink'
               }`}
             >
               {o.label}
@@ -273,9 +270,9 @@ const SearchPage: React.FC = () => {
           {/* Mobile: nút bộ lọc */}
           <div className="lg:hidden flex items-center justify-between mb-4">
             <p className="text-sm text-ink-muted">
-              {searched && !loading
+              {!idle
                 ? `${filtered.length} kết quả${query ? ` cho “${query}”` : ''}`
-                : query ? `Tìm “${query}”…` : 'Nhập tên truyện để tìm'}
+                : 'Nhập tên truyện hoặc chọn bộ lọc để tìm'}
             </p>
             <button onClick={() => setSheetOpen(true)} className="chip">
               <FiSliders size={14} /> Bộ lọc
@@ -296,7 +293,7 @@ const SearchPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          ) : !searched ? (
+          ) : idle ? (
             <EmptyState
               icon={<FiSearch size={26} />}
               title="Tìm truyện"

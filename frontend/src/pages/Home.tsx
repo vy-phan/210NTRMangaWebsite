@@ -74,6 +74,25 @@ const Home = () => {
                 </section>
             )}
 
+            {/* Teaser UI mới (ui-v2) */}
+            <section className="container mx-auto px-4 mt-16">
+                <Link
+                    to="/ntr"
+                    className="flex items-center gap-3 p-3 md:p-4 rounded-box bg-gradient-to-r from-primary/15 via-secondary/10 to-accent/15 border border-primary/30 hover:border-primary transition-colors group"
+                >
+                    <span className="badge badge-primary badge-lg shrink-0">Mới</span>
+                    <span className="flex-1 min-w-0">
+                        <span className="block text-sm md:text-base font-bold text-base-content group-hover:text-primary transition-colors">
+                            Giao diện mới đang thử nghiệm
+                        </span>
+                        <span className="block text-xs text-base-content/60 truncate">
+                            Trải nghiệm UI-v2: đọc truyện, thư viện, lịch sử theo phong cách mới
+                        </span>
+                    </span>
+                    <span className="btn btn-xs md:btn-sm btn-primary shrink-0">Dùng thử →</span>
+                </Link>
+            </section>
+
             <section className="container mx-auto px-4">
                 {!isOnline ? (
                     <div className="flex flex-col items-center justify-center py-16 bg-base-200 rounded-box text-center shadow-inner">

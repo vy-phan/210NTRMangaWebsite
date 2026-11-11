@@ -6,11 +6,9 @@ export type ThemePref = 'light' | 'dark' | 'system';
 interface UiState {
   theme: ThemePref;
   readerWidth: number; // 480 - 1200, mặc định 860
-  readerGap: number; // 0 - 40
 
   setTheme: (t: ThemePref) => void;
   setReaderWidth: (w: number) => void;
-  setReaderGap: (g: number) => void;
 }
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
@@ -35,11 +33,9 @@ export const useUiStore = create<UiState>()(
     (set) => ({
       theme: 'system',
       readerWidth: 860,
-      readerGap: 0,
 
       setTheme: (theme) => set({ theme }),
       setReaderWidth: (w) => set({ readerWidth: clamp(Math.round(w), 480, 1200) }),
-      setReaderGap: (g) => set({ readerGap: clamp(Math.round(g), 0, 40) }),
     }),
     {
       name: 'ntr-ui-v2',
@@ -47,7 +43,6 @@ export const useUiStore = create<UiState>()(
       partialize: (s) => ({
         theme: s.theme,
         readerWidth: s.readerWidth,
-        readerGap: s.readerGap,
       }),
     }
   )

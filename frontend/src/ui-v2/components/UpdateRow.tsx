@@ -32,10 +32,10 @@ const UpdateRow: React.FC<UpdateRowProps> = ({ manga }) => {
           {chapters.map((ch) => (
             <div key={ch._id} className="flex items-center justify-between gap-2">
               <Link
-                to={`/ntr/manga/${manga.slug}/chapter/${ch.number}`}
+                to={`/ntr/manga/${manga.slug}/chapter/${ch.number + 1}`}
                 className="text-[13px] text-ink-muted hover:text-accent transition-colors truncate min-w-0"
               >
-                {chapterLabel(ch.number, ch.title)}
+                {chapterLabel(ch.number + 1, ch.title)}
               </Link>
               {ch.createdAt && (
                 <span className="text-[11px] text-ink-muted shrink-0">{relativeTime(ch.createdAt)}</span>
