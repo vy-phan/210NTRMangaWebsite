@@ -25,6 +25,10 @@ dist-ssr
 
 ./dev-dist
 /dev-dist
+dev-dist
+./get-shit-done-for-antigravity
+/get-shit-done-for-antigravity
+
 .env
 .env.local
 .env.*.local

@@ -64,6 +64,11 @@ Thumbs.db
 *.sln
 *.swp
 
+.dist
+./dist 
+/dist
+./get-shit-done-for-antigravity
+/get-shit-done-for-antigravity
 
 # ===================================================================
 # Test & Coverage Reports - Bỏ qua các báo cáo kiểm thử
