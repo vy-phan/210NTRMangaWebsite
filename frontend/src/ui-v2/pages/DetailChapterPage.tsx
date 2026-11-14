@@ -11,10 +11,11 @@ import { getChapterOffline } from '../../utils/offlineDB';
 import ReaderImage from '../components/ReaderImage';
 import {
   FiArrowLeft, FiChevronLeft, FiChevronRight, FiSettings,
-  FiBookOpen, FiRefreshCw, FiWifiOff, FiPlay, FiPause, FiList,
+  FiBookOpen, FiRefreshCw, FiWifiOff, FiList, FiGlobe,
 } from 'react-icons/fi';
 import ChapterSheet from '../components/ChapterSheet';
 import ReaderSettingsSheet from '../components/ReaderSettingsSheet';
+import TranslatePopup from '../components/TranslatePopup';
 import '../styles/theme.css';
 import '../lib/uiStore';
 
@@ -36,14 +37,10 @@ const DetailChapterPage: React.FC = () => {
 
   const [toolbarVisible, setToolbarVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [translateOpen, setTranslateOpen] = useState(false);
   const [chapterSheetOpen, setChapterSheetOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [restored, setRestored] = useState(false);
-
-  // Auto scroll (page-down)
-  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
-  const scrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastAutoScrollTimeRef = useRef(0);
 
   const { addToHistory } = useHistoryStore();
 
@@ -122,7 +119,6 @@ const DetailChapterPage: React.FC = () => {
     setToolbarVisible(true);
     setSettingsOpen(false);
     setChapterSheetOpen(false);
-    setIsAutoScrolling(false);
     window.scrollTo(0, 0);
     load();
   }, [load]);
@@ -207,44 +203,6 @@ const DetailChapterPage: React.FC = () => {
 
   const toggleToolbar = useCallback(() => setToolbarVisible((v) => !v), []);
 
-  // ─── Auto scroll (page down) ──────────────────────────────────────────────
-  useEffect(() => {
-    if (isAutoScrolling) {
-      scrollIntervalRef.current = setInterval(() => {
-        const winH = window.innerHeight;
-        const docH = document.body.scrollHeight;
-        if (window.scrollY + winH >= docH - 50) {
-          setIsAutoScrolling(false);
-          toast('Đã cuộn đến cuối trang');
-          if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
-          return;
-        }
-        lastAutoScrollTimeRef.current = Date.now();
-        window.scrollBy({ top: winH * 0.9, behavior: 'smooth' });
-      }, 5000);
-    } else if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current);
-    }
-    return () => {
-      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
-    };
-  }, [isAutoScrolling]);
-
-  const handleUserScroll = useCallback(() => {
-    if (isAutoScrolling && Date.now() - lastAutoScrollTimeRef.current > 1000) {
-      setIsAutoScrolling(false);
-    }
-  }, [isAutoScrolling]);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleUserScroll, { passive: true });
-    window.addEventListener('touchmove', handleUserScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleUserScroll);
-      window.removeEventListener('touchmove', handleUserScroll);
-    };
-  }, [handleUserScroll]);
-
   // ─── Bàn phím ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -271,7 +229,7 @@ const DetailChapterPage: React.FC = () => {
         className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-200 ${toolbarVisible ? 'translate-y-0' : '-translate-y-full'}`}
         style={{ background: 'rgba(11,12,16,0.88)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--reader-line)' }}
       >
-        <div className="max-w-6xl mx-auto px-3 h-12 flex items-center gap-1">
+        <div className="relative max-w-6xl mx-auto px-3 h-14 flex items-center gap-1">
           <Link
             to={`/ntr/manga/${slug}`}
             className="p-2 rounded-lg reader-muted hover:text-white transition-colors"
@@ -279,50 +237,35 @@ const DetailChapterPage: React.FC = () => {
           >
             <FiArrowLeft size={18} />
           </Link>
-          <div className="flex-1 min-w-0 px-1">
-            <p className="text-[13px] font-bold truncate">{chapterTitle}</p>
-            <p className="text-[11px] reader-muted truncate">{mangaInfo?.title || slug}</p>
-          </div>
+          <Link
+            to={`/ntr/manga/${slug}`}
+            className="flex-1 min-w-0 px-1 py-1 rounded-lg hover:bg-white/5 transition-colors"
+            aria-label={`Về trang truyện: ${mangaInfo?.title || slug}`}
+          >
+            <p className="text-[12px] font-bold truncate leading-tight">{chapterTitle}</p>
+            <p className="text-[10px] reader-muted truncate leading-tight hidden sm:block">{mangaInfo?.title || slug}</p>
+          </Link>
           {isOfflineMode && (
             <span className="hidden sm:inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border shrink-0" style={{ color: '#f5b14c', borderColor: '#f5b14c55' }}>
               <FiWifiOff size={11} /> Offline
             </span>
           )}
-          {/* Chương trước / Chương sau */}
-          <button
-            disabled={!prevChapter}
-            onClick={() => prevChapter && navigate(`/ntr/manga/${slug}/chapter/${prevChapter.number + 1}`)}
-            className="p-2 rounded-lg reader-muted hover:text-white disabled:opacity-30 transition-colors shrink-0"
-            aria-label="Chương trước"
-            title="Chương trước"
-          >
-            <FiChevronLeft size={18} />
-          </button>
-          <button
-            disabled={!nextChapter}
-            onClick={() => nextChapter && navigate(`/ntr/manga/${slug}/chapter/${nextChapter.number + 1}`)}
-            className="p-2 rounded-lg reader-muted hover:text-white disabled:opacity-30 transition-colors shrink-0"
-            aria-label="Chương sau"
-            title="Chương sau"
-          >
-            <FiChevronRight size={18} />
-          </button>
-          {/* Danh sách chương */}
+          {/* Danh sách chương - căn giữa header */}
           <button
             onClick={() => setChapterSheetOpen(true)}
-            className="p-2 rounded-lg reader-muted hover:text-white transition-colors shrink-0"
+            className="absolute left-1/2 -translate-x-1/2 p-2 rounded-lg reader-muted hover:text-white transition-colors shrink-0"
             aria-label="Danh sách chương"
             title="Danh sách chương"
           >
             <FiList size={18} />
           </button>
           <button
-            onClick={() => setIsAutoScrolling((v) => !v)}
-            className={`p-2 rounded-lg transition-colors shrink-0 ${isAutoScrolling ? 'text-accent' : 'reader-muted hover:text-white'}`}
-            aria-label={isAutoScrolling ? 'Dừng tự cuộn' : 'Tự cuộn trang'}
-            title={isAutoScrolling ? 'Dừng tự cuộn' : 'Tự cuộn trang'}
+            onClick={() => setTranslateOpen((v) => !v)}
+            className={`p-2 rounded-lg transition-colors shrink-0 ${translateOpen ? 'text-accent' : 'reader-muted hover:text-white'}`}
+            aria-label="Tra từ Anh - Việt"
+            title="Tra từ Anh - Việt"
           >
-            {isAutoScrolling ? <FiPause size={17} /> : <FiPlay size={17} />}
+            <FiGlobe size={18} />
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
@@ -423,6 +366,9 @@ const DetailChapterPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Popup dịch Anh - Việt */}
+      <TranslatePopup isOpen={translateOpen} onClose={() => setTranslateOpen(false)} />
 
       {/* Ngăn kéo cài đặt trình đọc */}
       {settingsOpen && <ReaderSettingsSheet onClose={() => setSettingsOpen(false)} />}

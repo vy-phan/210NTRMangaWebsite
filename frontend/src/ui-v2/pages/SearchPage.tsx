@@ -242,7 +242,6 @@ const SearchPage: React.FC = () => {
           onChange={(e) => { setInputVal(e.target.value); if (!e.target.value.trim()) setQ(''); }}
           placeholder="Tìm theo tên truyện…"
           className="input !pl-10 !pr-10"
-          autoFocus
         />
         {inputVal && (
           <button

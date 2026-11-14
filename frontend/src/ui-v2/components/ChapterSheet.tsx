@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiX } from 'react-icons/fi';
 import { useProgressStore } from '../lib/progressStore';
@@ -14,6 +14,7 @@ const ChapterSheet: React.FC<{
 }> = ({ slug, chapters, currentNumber, mangaId, onClose }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
   // subscribe để mờ chương đã đọc
   const progressData = useProgressStore((s) => s.data);
 
@@ -37,6 +38,15 @@ const ChapterSheet: React.FC<{
 
   const isRead = (n: number) => !!mangaId && useProgressStore.getState().isRead(mangaId, n);
 
+  // Mở sheet → cuộn để chương đang đọc nằm giữa danh sách
+  useEffect(() => {
+    const container = listRef.current;
+    const el = container?.querySelector<HTMLElement>('[data-current="true"]');
+    if (!container || !el) return;
+    const top = el.offsetTop - (container.clientHeight - el.offsetHeight) / 2;
+    container.scrollTo({ top: Math.max(0, top) });
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={onClose} />
@@ -59,12 +69,11 @@ const ChapterSheet: React.FC<{
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Lọc theo số hoặc tên chương…"
-            className="input !py-2 !min-h-0 !text-[13px]"
-            autoFocus
+            className="input !py-2 !min-h-0 !text-base"
           />
         </div>
 
-        <div className="overflow-y-auto p-2 pb-6">
+        <div ref={listRef} className="relative overflow-y-auto p-2 pb-6">
           {sorted.length === 0 ? (
             <p className="text-sm text-ink-muted text-center py-8">Không có chương khớp bộ lọc.</p>
           ) : (
@@ -75,6 +84,7 @@ const ChapterSheet: React.FC<{
               return (
                 <button
                   key={ch._id}
+                  data-current={current || undefined}
                   onClick={() => {
                     onClose();
                     navigate(`/ntr/manga/${slug}/chapter/${displayNum}`);
